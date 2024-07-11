@@ -122,7 +122,7 @@ func (j *JKV_DB) HDEL(hash, key string) (err error) {
 }
 
 // HKEYS return a list of keys for a hash
-func (j *JKV_DB) HKEYS(hash, pattern string) ([]string, error) {
+func (j *JKV_DB) HKEYS(hash string) ([]string, error) {
 	if j.IsOpen {
 		rec := client.HKeys(context.Background(), hash)
 		if rec.Err() != nil {

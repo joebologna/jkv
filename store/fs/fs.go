@@ -146,16 +146,19 @@ func (j *JKV_DB) HDEL(hash, key string) (err error) {
 }
 
 // HKEYS returns the hash keys
-func (j *JKV_DB) HKEYS(hash, pattern string) ([]string, error) {
-	entries, err := os.ReadDir(j.HashDir())
-	if err != nil {
-		return []string{}, err
+func (j *JKV_DB) HKEYS(hash string) (_ []string, err error) {
+	if _, err = os.Stat(j.HashDir() + hash); err == nil {
+		entries, err := os.ReadDir(j.HashDir() + hash)
+		if err != nil {
+			return []string{}, err
+		}
+		var files []string
+		for _, file := range entries {
+			files = append(files, file.Name())
+		}
+		return files, nil
 	}
-	var files []string
-	for _, file := range entries {
-		files = append(files, file.Name())
-	}
-	return files, nil
+	return []string{}, err
 }
 
 // Return true if hashed key file exists, false otherwise

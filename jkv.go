@@ -12,6 +12,6 @@ type JKV_OP interface {
 	HGET(hash, key string) (string, error)
 	HSET(hash, key, value string) error
 	HDEL(hash, key string) error
-	HKEYS(hash, pattern string) ([]string, error)
+	HKEYS(hash string) ([]string, error)
 	HEXISTS(hash, key string) bool
 }

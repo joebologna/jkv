@@ -86,7 +86,7 @@ func ProcessCmd(db interface{}, cmd string) {
 			fmt.Println("(error) ERR syntax error")
 		}
 	case "HGET":
-		if len(tokens) == 2 {
+		if len(tokens) == 3 {
 			if r, ok := db.(*redis.JKV_DB); ok {
 				value, err = r.HGET(tokens[1], tokens[2])
 			} else {
@@ -148,9 +148,9 @@ func ProcessCmd(db interface{}, cmd string) {
 	case "HKEYS":
 		if len(tokens) == 2 {
 			if r, ok := db.(*redis.JKV_DB); ok {
-				values, err = r.HKEYS(tokens[1], tokens[2])
+				values, err = r.HKEYS(tokens[1])
 			} else {
-				values, err = db.(*fs.JKV_DB).HKEYS(tokens[1], tokens[2])
+				values, err = db.(*fs.JKV_DB).HKEYS(tokens[1])
 			}
 			if err != nil {
 				fmt.Println("(nil)")
