@@ -20,18 +20,20 @@ func main() {
 	}
 	// fmt.Println("cmd is", cmd)
 
-	var run_test, redis_cmd, fs_cmd, version, opt_x bool
+	var run_test, redis_cmd, fs_cmd, version, opt_x, prompt bool
 	flag.BoolVar(&run_test, "t", false, "Run JKV tests")
 	flag.BoolVar(&redis_cmd, "r", cmd == "redis-cli", "Run JKV tests using Redis")
 	flag.BoolVar(&fs_cmd, "f", cmd == "jkv-cli", "Run JKV tests using FS")
 	flag.BoolVar(&version, "v", false, "Print version")
-	flag.BoolVar(&opt_x, "x", false, "Take get value from stdin")
+	flag.BoolVar(&opt_x, "x", false, "Get value from stdin")
 	flag.Parse()
 
 	if version {
 		fmt.Println(jkv.VERSION)
 		os.Exit(0)
 	}
+
+	prompt = len(flag.Args()) == 0
 
 	if run_test {
 		c := fs.NewJKVClient()
@@ -47,22 +49,26 @@ func main() {
 		r := redis.NewJKVClient()
 		r.Open()
 
-		scanner := bufio.NewScanner(os.Stdin)
+		if prompt {
+			scanner := bufio.NewScanner(os.Stdin)
 
-		fmt.Printf(r.DBDir + "> ")
-		for scanner.Scan() {
-			ProcessCmd(r, scanner.Text())
 			fmt.Printf(r.DBDir + "> ")
-		}
+			for scanner.Scan() {
+				ProcessCmd(r, scanner.Text())
+				fmt.Printf(r.DBDir + "> ")
+			}
 
-		if err := scanner.Err(); err != nil {
-			fmt.Println("Error reading input:", err)
+			if err := scanner.Err(); err != nil {
+				fmt.Println("Error reading input:", err)
+			}
+		} else {
+			fmt.Println("process command line")
 		}
 	} else if fs_cmd {
 		f := fs.NewJKVClient()
 		f.Open()
 
-		if len(flag.Args()) == 0 {
+		if prompt {
 			scanner := bufio.NewScanner(os.Stdin)
 
 			fmt.Printf(f.DBDir + "> ")
@@ -75,7 +81,7 @@ func main() {
 				fmt.Println("Error reading input:", err)
 			}
 		} else {
-			fmt.Println("process args as commands", os.Args[0])
+			fmt.Println("process command line")
 		}
 	}
 }
