@@ -62,7 +62,7 @@ func main() {
 				fmt.Println("Error reading input:", err)
 			}
 		} else {
-			fmt.Println("process command line")
+			ProcessCmd(r, strings.Join(flag.Args(), " "))
 		}
 	} else if fs_cmd {
 		f := fs.NewJKVClient()
@@ -81,7 +81,7 @@ func main() {
 				fmt.Println("Error reading input:", err)
 			}
 		} else {
-			fmt.Println("process command line")
+			ProcessCmd(f, strings.Join(flag.Args(), " "))
 		}
 	}
 }
@@ -144,7 +144,7 @@ func ProcessCmd(db interface{}, cmd string) {
 				err = db.(*fs.JKV_DB).HSET(tokens[1], tokens[2], tokens[3])
 			}
 			if err != nil {
-				if strings.Contains(err.Error(), "exists as a scalar, cannot be a hash") {
+				if strings.Contains(err.Error(), "exists as a scalar, cannot be a hash") || strings.Contains(err.Error(), "WRONGTYPE") {
 					fmt.Println("(error) WRONGTYPE Operation against a key holding the wrong kind of value")
 				} else {
 					fmt.Println("(nil)")
