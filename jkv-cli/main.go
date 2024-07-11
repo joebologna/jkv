@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -54,7 +55,7 @@ func main() {
 
 			fmt.Printf(r.DBDir + "> ")
 			for scanner.Scan() {
-				ProcessCmd(r, scanner.Text())
+				ProcessCmd(r, scanner.Text(), opt_x)
 				fmt.Printf(r.DBDir + "> ")
 			}
 
@@ -62,7 +63,7 @@ func main() {
 				fmt.Println("Error reading input:", err)
 			}
 		} else {
-			ProcessCmd(r, strings.Join(flag.Args(), " "))
+			ProcessCmd(r, strings.Join(flag.Args(), " "), opt_x)
 		}
 	} else if fs_cmd {
 		f := fs.NewJKVClient()
@@ -73,7 +74,7 @@ func main() {
 
 			fmt.Printf(f.DBDir + "> ")
 			for scanner.Scan() {
-				ProcessCmd(f, scanner.Text())
+				ProcessCmd(f, scanner.Text(), opt_x)
 				fmt.Printf(f.DBDir + "> ")
 			}
 
@@ -81,14 +82,14 @@ func main() {
 				fmt.Println("Error reading input:", err)
 			}
 		} else {
-			ProcessCmd(f, strings.Join(flag.Args(), " "))
+			ProcessCmd(f, strings.Join(flag.Args(), " "), opt_x)
 		}
 	}
 }
 
 func ok(label string, doit func() error) { fmt.Printf("%s returned %t\n", label, doit() == nil) }
 
-func ProcessCmd(db interface{}, cmd string) {
+func ProcessCmd(db interface{}, cmd string, opt_x bool) {
 	var (
 		value  string
 		values []string
@@ -126,34 +127,75 @@ func ProcessCmd(db interface{}, cmd string) {
 			fmt.Println("(nil)")
 		}
 	case "HSET":
-		if len(tokens) == 4 {
-			var msg string
-			if r, ok := db.(*redis.JKV_DB); ok {
-				if r.HEXISTS(tokens[1], tokens[2]) {
-					msg = "(integer) 0"
-				} else {
-					msg = "(integer) 1"
+		if opt_x {
+			if len(tokens) == 3 {
+				var buf = make([]byte, 1024*1024)
+				var n = 0
+				n, err = os.Stdin.Read(buf)
+				if n == 0 {
+					if err != io.EOF {
+						panic(err.Error())
+					}
+					return
 				}
-				err = r.HSET(tokens[1], tokens[2], tokens[3])
+				var msg string
+				if r, ok := db.(*redis.JKV_DB); ok {
+					if r.HEXISTS(tokens[1], tokens[2]) {
+						msg = "(integer) 0"
+					} else {
+						msg = "(integer) 1"
+					}
+					err = r.HSET(tokens[1], tokens[2], string(buf[:n-1]))
+				} else {
+					if db.(*fs.JKV_DB).HEXISTS(tokens[1], tokens[2]) {
+						msg = "(integer) 0"
+					} else {
+						msg = "(integer) 1"
+					}
+					err = db.(*fs.JKV_DB).HSET(tokens[1], tokens[2], string(buf[:n-1]))
+				}
+				if err != nil {
+					if strings.Contains(err.Error(), "exists as a scalar, cannot be a hash") || strings.Contains(err.Error(), "WRONGTYPE") {
+						fmt.Println("(error) WRONGTYPE Operation against a key holding the wrong kind of value")
+					} else {
+						fmt.Println("(nil)")
+					}
+				} else {
+					fmt.Println(msg)
+				}
 			} else {
-				if db.(*fs.JKV_DB).HEXISTS(tokens[1], tokens[2]) {
-					msg = "(integer) 0"
-				} else {
-					msg = "(integer) 1"
-				}
-				err = db.(*fs.JKV_DB).HSET(tokens[1], tokens[2], tokens[3])
-			}
-			if err != nil {
-				if strings.Contains(err.Error(), "exists as a scalar, cannot be a hash") || strings.Contains(err.Error(), "WRONGTYPE") {
-					fmt.Println("(error) WRONGTYPE Operation against a key holding the wrong kind of value")
-				} else {
-					fmt.Println("(nil)")
-				}
-			} else {
-				fmt.Println(msg)
+				fmt.Println("(error) ERR wrong number of arguments for 'hset' command")
 			}
 		} else {
-			fmt.Println("(error) ERR wrong number of arguments for 'hset' command")
+			if len(tokens) == 4 {
+				var msg string
+				if r, ok := db.(*redis.JKV_DB); ok {
+					if r.HEXISTS(tokens[1], tokens[2]) {
+						msg = "(integer) 0"
+					} else {
+						msg = "(integer) 1"
+					}
+					err = r.HSET(tokens[1], tokens[2], tokens[3])
+				} else {
+					if db.(*fs.JKV_DB).HEXISTS(tokens[1], tokens[2]) {
+						msg = "(integer) 0"
+					} else {
+						msg = "(integer) 1"
+					}
+					err = db.(*fs.JKV_DB).HSET(tokens[1], tokens[2], tokens[3])
+				}
+				if err != nil {
+					if strings.Contains(err.Error(), "exists as a scalar, cannot be a hash") || strings.Contains(err.Error(), "WRONGTYPE") {
+						fmt.Println("(error) WRONGTYPE Operation against a key holding the wrong kind of value")
+					} else {
+						fmt.Println("(nil)")
+					}
+				} else {
+					fmt.Println(msg)
+				}
+			} else {
+				fmt.Println("(error) ERR wrong number of arguments for 'hset' command")
+			}
 		}
 	case "HDEL":
 		if len(tokens) == 2 {
@@ -219,19 +261,45 @@ func ProcessCmd(db interface{}, cmd string) {
 			fmt.Println("(nil)")
 		}
 	case "SET":
-		if len(tokens) == 3 {
-			if r, ok := db.(*redis.JKV_DB); ok {
-				err = r.SET(tokens[1], tokens[2])
+		if opt_x {
+			if len(tokens) == 2 {
+				var buf = make([]byte, 1024*1024)
+				var n = 0
+				n, err = os.Stdin.Read(buf)
+				if n == 0 {
+					if err != io.EOF {
+						panic(err.Error())
+					}
+					return
+				}
+				if r, ok := db.(*redis.JKV_DB); ok {
+					err = r.SET(tokens[1], string(buf[:n-1]))
+				} else {
+					err = db.(*fs.JKV_DB).SET(tokens[1], string(buf[:n-1]))
+				}
+				if err != nil {
+					fmt.Println("(nil)")
+				} else {
+					fmt.Println("OK")
+				}
 			} else {
-				err = db.(*fs.JKV_DB).SET(tokens[1], tokens[2])
-			}
-			if err != nil {
-				fmt.Println("(nil)")
-			} else {
-				fmt.Println("OK")
+				fmt.Println("(error) ERR wrong number of arguments for 'set' command")
 			}
 		} else {
-			fmt.Println("(error) ERR wrong number of arguments for 'set' command")
+			if len(tokens) == 3 {
+				if r, ok := db.(*redis.JKV_DB); ok {
+					err = r.SET(tokens[1], tokens[2])
+				} else {
+					err = db.(*fs.JKV_DB).SET(tokens[1], tokens[2])
+				}
+				if err != nil {
+					fmt.Println("(nil)")
+				} else {
+					fmt.Println("OK")
+				}
+			} else {
+				fmt.Println("(error) ERR wrong number of arguments for 'set' command")
+			}
 		}
 	case "DEL":
 		if len(tokens) == 2 {
