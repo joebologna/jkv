@@ -167,31 +167,46 @@ func ProcessCmd(db interface{}, cmd string, opt_x bool) {
 				fmt.Println("(error) ERR wrong number of arguments for 'hset' command")
 			}
 		} else {
-			if len(tokens) == 4 {
-				var msg string
-				if r, ok := db.(*redis.JKV_DB); ok {
-					if r.HEXISTS(tokens[1], tokens[2]) {
-						msg = "(integer) 0"
+			if len(tokens) >= 4 && ((len(tokens)-2)%2 == 0) {
+				n := 0
+				i := 2
+				hash := tokens[1]
+				for {
+					key := tokens[i]
+					value = tokens[i+1]
+					var msg string
+					if r, ok := db.(*redis.JKV_DB); ok {
+						if r.HEXISTS(hash, key) {
+							msg = "(integer) 0"
+						} else {
+							msg = "(integer) 1"
+						}
+						err = r.HSET(hash, key, value)
 					} else {
-						msg = "(integer) 1"
+						if db.(*fs.JKV_DB).HEXISTS(hash, key) {
+							msg = "(integer) 0"
+						} else {
+							msg = "(integer) 1"
+						}
+						err = db.(*fs.JKV_DB).HSET(hash, key, value)
 					}
-					err = r.HSET(tokens[1], tokens[2], tokens[3])
-				} else {
-					if db.(*fs.JKV_DB).HEXISTS(tokens[1], tokens[2]) {
-						msg = "(integer) 0"
+					if err != nil {
+						if strings.Contains(err.Error(), "exists as a scalar, cannot be a hash") || strings.Contains(err.Error(), "WRONGTYPE") {
+							fmt.Println("(error) WRONGTYPE Operation against a key holding the wrong kind of value")
+							break
+						} else {
+							fmt.Println("(nil)")
+							break
+						}
 					} else {
-						msg = "(integer) 1"
+						n++
+						i = i + 2
+						msg = fmt.Sprintf("(integer) %d", i/2)
 					}
-					err = db.(*fs.JKV_DB).HSET(tokens[1], tokens[2], tokens[3])
-				}
-				if err != nil {
-					if strings.Contains(err.Error(), "exists as a scalar, cannot be a hash") || strings.Contains(err.Error(), "WRONGTYPE") {
-						fmt.Println("(error) WRONGTYPE Operation against a key holding the wrong kind of value")
-					} else {
-						fmt.Println("(nil)")
+					if i == len(tokens)-2 {
+						fmt.Println(msg)
+						break
 					}
-				} else {
-					fmt.Println(msg)
 				}
 			} else {
 				fmt.Println("(error) ERR wrong number of arguments for 'hset' command")

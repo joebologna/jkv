@@ -5,10 +5,10 @@ This script requires:
 
 - [x] redis-cli FLUSHDB
 - upload-icons
-  - redis-cli -x HSET hkey key <file
+  - [x] redis-cli -x HSET hkey key <file
 - upload-networks
-  - go run tmp2json.go | redis-cli -x HSET dhcp 80-wired-dhcp.tmpl
-  - go run tmp2json.go | redis-cli -x HSET dhcp 80-wired-static.tmpl
+  - [x] go run tmp2json.go | redis-cli -x HSET dhcp 80-wired-dhcp.tmpl
+  - [x] go run tmp2json.go | redis-cli -x HSET dhcp 80-wired-static.tmpl
   - [x] redis-cli hset Networks :default dhcp
 - screens/main.go
   - dbutil.UpsertItem(key, screen_data.String())
