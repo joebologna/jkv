@@ -5,4 +5,4 @@ jkv-cli: main.go
 	go build -o $@ main.go
 
 clean:
-	rm -f jkv-cli
+	rm -f jkv-cli redis-cli

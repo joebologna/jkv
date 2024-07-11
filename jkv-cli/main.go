@@ -7,16 +7,31 @@ import (
 	"os"
 	"strings"
 
+	"github.com/panduit-joeb/jkv"
 	"github.com/panduit-joeb/jkv/store/fs"
 	"github.com/panduit-joeb/jkv/store/redis"
 )
 
 func main() {
-	var run_test, redis_cmd, fs_cmd bool
+	cmd := os.Args[0]
+	if strings.Contains(os.Args[0], "/") {
+		a := strings.Split(os.Args[0], "/")
+		cmd = a[len(a)-1]
+	}
+	// fmt.Println("cmd is", cmd)
+
+	var run_test, redis_cmd, fs_cmd, version, opt_x bool
 	flag.BoolVar(&run_test, "t", false, "Run JKV tests")
-	flag.BoolVar(&redis_cmd, "r", false, "Run JKV tests using Redis")
-	flag.BoolVar(&fs_cmd, "f", false, "Run JKV tests using FS")
+	flag.BoolVar(&redis_cmd, "r", cmd == "redis-cli", "Run JKV tests using Redis")
+	flag.BoolVar(&fs_cmd, "f", cmd == "jkv-cli", "Run JKV tests using FS")
+	flag.BoolVar(&version, "v", false, "Print version")
+	flag.BoolVar(&opt_x, "x", false, "Take get value from stdin")
 	flag.Parse()
+
+	if version {
+		fmt.Println(jkv.VERSION)
+		os.Exit(0)
+	}
 
 	if run_test {
 		c := fs.NewJKVClient()
@@ -47,16 +62,20 @@ func main() {
 		f := fs.NewJKVClient()
 		f.Open()
 
-		scanner := bufio.NewScanner(os.Stdin)
+		if len(flag.Args()) == 0 {
+			scanner := bufio.NewScanner(os.Stdin)
 
-		fmt.Printf(f.DBDir + "> ")
-		for scanner.Scan() {
-			ProcessCmd(f, scanner.Text())
 			fmt.Printf(f.DBDir + "> ")
-		}
+			for scanner.Scan() {
+				ProcessCmd(f, scanner.Text())
+				fmt.Printf(f.DBDir + "> ")
+			}
 
-		if err := scanner.Err(); err != nil {
-			fmt.Println("Error reading input:", err)
+			if err := scanner.Err(); err != nil {
+				fmt.Println("Error reading input:", err)
+			}
+		} else {
+			fmt.Println("process args as commands", os.Args[0])
 		}
 	}
 }
