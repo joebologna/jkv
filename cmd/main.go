@@ -4,10 +4,11 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"jkv/store/fs"
-	"jkv/store/redis"
 	"os"
 	"strings"
+
+	"github.com/panduit-joeb/jkv/store/fs"
+	"github.com/panduit-joeb/jkv/store/redis"
 )
 
 func main() {

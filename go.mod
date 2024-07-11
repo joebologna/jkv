@@ -1,4 +1,4 @@
-module jkv
+module github.com/panduit-joeb/jkv
 
 go 1.19
 

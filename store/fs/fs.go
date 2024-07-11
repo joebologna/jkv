@@ -4,8 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"jkv"
 	"os"
+
+	"github.com/panduit-joeb/jkv"
 )
 
 type JKV_DB struct {

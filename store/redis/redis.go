@@ -3,7 +3,8 @@ package redis
 import (
 	"context"
 	"errors"
-	"jkv"
+
+	"github.com/panduit-joeb/jkv"
 
 	"github.com/go-redis/redis/v8"
 )
