@@ -1,6 +1,7 @@
 Thu 11 Jul 2024 01:39:25 PM CDT
 
 # initdb
+
 This script requires:
 
 - [x] redis-cli FLUSHDB
@@ -11,8 +12,8 @@ This script requires:
   - [x] go run tmp2json.go | redis-cli -x HSET dhcp 80-wired-static.tmpl
   - [x] redis-cli hset Networks :default dhcp
 - screens/main.go
-  - dbutil.UpsertItem(key, screen_data.String())
-  - rdb.Del()
+  - [x] dbutil.UpsertItem(key, screen_data.String()) -> convert to HSet
+  - [ ] rdb.Del()
 - upload-backgrounds
   - redis-cli -x HSET hkey key <file
 - [ ] redis-cli HSET RunModes Production '{"Debug":true}' Dev '{"Debug":true}' :current Dev
@@ -20,3 +21,13 @@ This script requires:
 - backupdb
   - rdbrip -s rdb.sys.zip
   - rdbrip -c rdb-config.zip
+
+# //todo
+
+Change the JKV_OP to match the Redis operations supported, including return codes such as Err().
+
+Convert asset-mgmt/screens/main.go first
+  - [ ] dbutil
+    - [ ] use jkv/store/redis
+    - [ ] Rework JVK_OP to be compatible with operations required by dbutil and screens/main.go
+    - [ ] 

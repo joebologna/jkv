@@ -6,137 +6,139 @@ import (
 
 	"github.com/panduit-joeb/jkv"
 
-	"github.com/go-redis/redis/v8"
+	real_redis "github.com/go-redis/redis/v8"
 )
 
-type JKV_DB struct {
-	DBDir  string
-	IsOpen bool
+type Options struct {
+	Addr, Password string
+	DB             int
 }
 
-var _ jkv.JKV_OP = (*JKV_DB)(nil)
+type Client struct {
+	DBDir       string
+	IsOpen      bool
+	RedisClient *real_redis.Client
+}
+
+var _ jkv.Client = (*Client)(nil)
 
 const DEFAULT_DB = "localhost:6379"
-
-var client *redis.Client
 
 func notOpen() error { return errors.New("DB is not open") }
 
 // default location of db is "./jkv_db"
-func NewJKVClient(db_dir ...string) (db *JKV_DB) {
-	if len(db_dir) == 0 {
-		db = &JKV_DB{DBDir: DEFAULT_DB}
-	} else {
-		db = &JKV_DB{DBDir: db_dir[0]}
-	}
-	client = redis.NewClient(&redis.Options{Addr: db.DBDir})
-	return db
+func NewClient(opts *Options) (db *Client) {
+	return &Client{DBDir: opts.Addr, IsOpen: false, RedisClient: real_redis.NewClient(&real_redis.Options{Addr: opts.Addr, Password: opts.Password, DB: opts.DB})}
 }
 
 // Open a database by creating the directories required if they don't exist and mark the database open
-func (j *JKV_DB) Open() error {
-	j.IsOpen = true
+func (c *Client) Open() error {
+	c.IsOpen = true
 	return nil
 }
 
 // Close a database, basically just mark it closed
-func (j *JKV_DB) Close() { j.IsOpen = false; client.Close() }
+func (c *Client) Close() { c.IsOpen = false; c.RedisClient.Close() }
 
 // FLUSHDB a database by removing the j.dbDir and everything underneath, ignore errors for now
-func (j *JKV_DB) FLUSHDB() { client.FlushDB(context.Background()) }
+func (c *Client) FlushDB(ctx context.Context) *jkv.StatusCmd {
+	rec := c.RedisClient.FlushDB(context.Background())
+	return jkv.NewStatusCmd(rec.Val(), rec.Err())
+}
 
 // Return data in scalar key data, error is file is missing or inaccessible
-func (j *JKV_DB) GET(key string) (value string, err error) {
-	if j.IsOpen {
-		rec := client.Get(context.Background(), key)
-		if rec.Err() != nil {
-			return "", rec.Err()
-		}
-		return rec.Val(), nil
+func (c *Client) Get(ctx context.Context, key string) *jkv.StringCmd {
+	if c.IsOpen {
+		rec := c.RedisClient.Get(context.Background(), key)
+		return jkv.NewStringCmd(rec.Val(), rec.Err())
 	}
-	return "", notOpen()
+	return jkv.NewStringCmd("", notOpen())
 }
 
 // Set a scalar key to a value
-func (j *JKV_DB) SET(key, value string) (err error) {
-	if j.IsOpen {
-		return client.Set(context.Background(), key, value, 0).Err()
+func (c *Client) Set(ctx context.Context, key, value string) *jkv.StatusCmd {
+	if c.IsOpen {
+		rec := c.RedisClient.Set(ctx, key, value, 0)
+		return jkv.NewStatusCmd(rec.Val(), rec.Err())
 	}
-	return notOpen()
+	return jkv.NewStatusCmd("", notOpen())
 }
 
 // Delete a key by removing the scalar file
-func (j *JKV_DB) DEL(key string) error {
-	if j.IsOpen {
-		return client.Del(context.Background(), key).Err()
+func (c *Client) Del(ctx context.Context, keys ...string) *jkv.IntCmd {
+	if c.IsOpen {
+		rec := c.RedisClient.Del(context.Background(), keys...)
+		return jkv.NewIntCmd(rec.Val(), rec.Err())
 	}
-	return notOpen()
+	return jkv.NewIntCmd(0, notOpen())
 }
 
 // KEYS return a list of keys
-func (j *JKV_DB) KEYS(pattern string) ([]string, error) {
-	if j.IsOpen {
-		rec := client.Keys(context.Background(), pattern)
-		if rec.Err() != nil {
-			return []string{}, rec.Err()
-		}
-		return rec.Val(), nil
+func (c *Client) Keys(ctx context.Context, pattern string) *jkv.StringSliceCmd {
+	if c.IsOpen {
+		rec := c.RedisClient.Keys(context.Background(), pattern)
+		return jkv.NewStringSliceCmd(rec.Val(), rec.Err())
 	}
-	return []string{}, notOpen()
+	return jkv.NewStringSliceCmd([]string{}, notOpen())
 }
 
 // Return true if scalar key file exists, false otherwise
-func (j *JKV_DB) EXISTS(key string) bool {
-	if j.IsOpen {
-		return client.Exists(context.Background(), key).Val() == 1
+func (c *Client) Exists(ctx context.Context, keys ...string) *jkv.IntCmd {
+	if c.IsOpen {
+		rec := c.RedisClient.Exists(context.Background(), keys...)
+		return jkv.NewIntCmd(rec.Val(), rec.Err())
 	}
-	return false
+	return jkv.NewIntCmd(0, notOpen())
 }
 
 // Return data in hashed key data, error is file is missing or inaccessible
-func (j *JKV_DB) HGET(hash, key string) (value string, err error) {
-	if j.IsOpen {
-		rec := client.HGet(context.Background(), hash, key)
-		if rec.Err() != nil {
-			return "", rec.Err()
-		}
-		return rec.Val(), nil
+func (c *Client) HGet(ctx context.Context, hash, key string) *jkv.StringCmd {
+	if c.IsOpen {
+		rec := c.RedisClient.HGet(ctx, hash, key)
+		return jkv.NewStringCmd(rec.Val(), rec.Err())
 	}
-	return "", notOpen()
+	return jkv.NewStringCmd("", notOpen())
 }
 
 // Create a hash directory and store the data in a key file
-func (j *JKV_DB) HSET(hash, key, value string) (err error) {
-	if j.IsOpen {
-		return client.HSet(context.Background(), hash, key, value).Err()
+func (c *Client) HSet(ctx context.Context, hash, key, value string) *jkv.IntCmd {
+	var rec *real_redis.IntCmd
+	if c.IsOpen {
+		rec = c.RedisClient.HSet(ctx, hash, key, value)
+		return jkv.NewIntCmd(rec.Val(), rec.Err())
 	}
-	return notOpen()
+	return jkv.NewIntCmd(0, notOpen())
 }
 
 // Delete a hashed key by removing the file, if no keys exist after the operation remove the hash directory
-func (j *JKV_DB) HDEL(hash, key string) (err error) {
-	if j.IsOpen {
-		return client.HDel(context.Background(), hash, key).Err()
+func (c *Client) HDel(ctx context.Context, hash, key string) *jkv.IntCmd {
+	var rec *real_redis.IntCmd
+	if c.IsOpen {
+		rec = c.RedisClient.HDel(ctx, hash, key)
+		return jkv.NewIntCmd(rec.Val(), rec.Err())
 	}
-	return notOpen()
+	return jkv.NewIntCmd(0, notOpen())
 }
 
 // HKEYS return a list of keys for a hash
-func (j *JKV_DB) HKEYS(hash string) ([]string, error) {
-	if j.IsOpen {
-		rec := client.HKeys(context.Background(), hash)
-		if rec.Err() != nil {
-			return []string{}, rec.Err()
-		}
-		return rec.Val(), nil
+func (c *Client) HKeys(ctx context.Context, hash string) *jkv.StringSliceCmd {
+	if c.IsOpen {
+		rec := c.RedisClient.HKeys(ctx, hash)
+		return jkv.NewStringSliceCmd(rec.Val(), rec.Err())
 	}
-	return []string{}, notOpen()
+	return jkv.NewStringSliceCmd([]string{}, notOpen())
 }
 
 // Return true if hashed key file exists, false otherwise
-func (j *JKV_DB) HEXISTS(hash, key string) bool {
-	if j.IsOpen {
-		return client.HExists(context.Background(), hash, key).Val()
+func (c *Client) HExists(ctx context.Context, hash, key string) *jkv.BoolCmd {
+	if c.IsOpen {
+		rec := c.RedisClient.HExists(context.Background(), hash, key)
+		return jkv.NewBoolCmd(rec.Val(), rec.Err())
 	}
-	return false
+	return jkv.NewBoolCmd(false, notOpen())
+}
+
+func (c *Client) Ping(ctx context.Context) *jkv.StatusCmd {
+	rec := c.RedisClient.Ping(ctx)
+	return jkv.NewStatusCmd(rec.Val(), rec.Err())
 }
