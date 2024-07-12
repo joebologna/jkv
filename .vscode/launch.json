@@ -9,7 +9,18 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "${fileDirname}"
+            "program": "${fileDirname}",
+            "args": [
+                "-f",
+                "hset",
+                "hashwith3keys",
+                "one",
+                "1",
+                "two",
+                "2",
+                "three",
+                "3"
+            ]
         }
     ]
 }

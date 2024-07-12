@@ -127,90 +127,41 @@ func ProcessCmd(db interface{}, cmd string, opt_x bool) {
 			fmt.Println("(nil)")
 		}
 	case "HSET":
-		if opt_x {
-			if len(tokens) == 3 {
-				var buf = make([]byte, 1024*1024)
-				var n = 0
-				n, err = os.Stdin.Read(buf)
-				if n == 0 {
-					if err != io.EOF {
-						panic(err.Error())
-					}
+		fmt.Println("add -x support")
+		if len(tokens) > 2 {
+			if r, ok := db.(*redis.JKV_DB); ok {
+				if r.EXISTS(tokens[1]) {
+					fmt.Println("(error) WRONGTYPE Operation against a key holding the wrong kind of value")
 					return
 				}
-				var msg string
-				if r, ok := db.(*redis.JKV_DB); ok {
-					if r.HEXISTS(tokens[1], tokens[2]) {
-						msg = "(integer) 0"
-					} else {
-						msg = "(integer) 1"
-					}
-					err = r.HSET(tokens[1], tokens[2], string(buf[:n-1]))
-				} else {
-					if db.(*fs.JKV_DB).HEXISTS(tokens[1], tokens[2]) {
-						msg = "(integer) 0"
-					} else {
-						msg = "(integer) 1"
-					}
-					err = db.(*fs.JKV_DB).HSET(tokens[1], tokens[2], string(buf[:n-1]))
+			} else {
+				if db.(*fs.JKV_DB).EXISTS(tokens[1]) {
+					fmt.Println("(error) WRONGTYPE Operation against a key holding the wrong kind of value")
+					return
 				}
-				if err != nil {
-					if strings.Contains(err.Error(), "exists as a scalar, cannot be a hash") || strings.Contains(err.Error(), "WRONGTYPE") {
-						fmt.Println("(error) WRONGTYPE Operation against a key holding the wrong kind of value")
+			}
+			if len(tokens) >= 4 && ((len(tokens)-2)%2 == 0) {
+				hash := tokens[1]
+				var n int
+				for n = 0; n < (len(tokens)-1)/2; n++ {
+					key := tokens[2+n*2]
+					value = tokens[2+n*2+1]
+					if r, ok := db.(*redis.JKV_DB); ok {
+						err = r.HSET(hash, key, value)
 					} else {
-						fmt.Println("(nil)")
+						err = db.(*fs.JKV_DB).HSET(hash, key, value)
 					}
-				} else {
-					fmt.Println(msg)
+					if err != nil {
+						fmt.Println(err.Error())
+						return
+					}
 				}
+				fmt.Printf("(integer) %d\n", n)
 			} else {
 				fmt.Println("(error) ERR wrong number of arguments for 'hset' command")
 			}
 		} else {
-			if len(tokens) >= 4 && ((len(tokens)-2)%2 == 0) {
-				n := 0
-				i := 2
-				hash := tokens[1]
-				for {
-					key := tokens[i]
-					value = tokens[i+1]
-					var msg string
-					if r, ok := db.(*redis.JKV_DB); ok {
-						if r.HEXISTS(hash, key) {
-							msg = "(integer) 0"
-						} else {
-							msg = "(integer) 1"
-						}
-						err = r.HSET(hash, key, value)
-					} else {
-						if db.(*fs.JKV_DB).HEXISTS(hash, key) {
-							msg = "(integer) 0"
-						} else {
-							msg = "(integer) 1"
-						}
-						err = db.(*fs.JKV_DB).HSET(hash, key, value)
-					}
-					if err != nil {
-						if strings.Contains(err.Error(), "exists as a scalar, cannot be a hash") || strings.Contains(err.Error(), "WRONGTYPE") {
-							fmt.Println("(error) WRONGTYPE Operation against a key holding the wrong kind of value")
-							break
-						} else {
-							fmt.Println("(nil)")
-							break
-						}
-					} else {
-						n++
-						i = i + 2
-						msg = fmt.Sprintf("(integer) %d", i/2)
-					}
-					if i == len(tokens)-2 {
-						fmt.Println(msg)
-						break
-					}
-				}
-			} else {
-				fmt.Println("(error) ERR wrong number of arguments for 'hset' command")
-			}
+			fmt.Println("(nil)")
 		}
 	case "HDEL":
 		if len(tokens) == 2 {

@@ -1,9 +1,19 @@
 {
     "cSpell.words": [
+        "backupdb",
+        "dbutil",
+        "FLUSHDB",
         "HDEL",
         "HEXISTS",
         "HGET",
+        "hkey",
+        "HKEYS",
         "HSET",
-        "stretchr"
+        "initdb",
+        "panduit",
+        "rdbrip",
+        "stretchr",
+        "Upsert",
+        "WRONGTYPE"
     ]
 }
