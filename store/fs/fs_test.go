@@ -1,6 +1,7 @@
 package fs
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -8,47 +9,39 @@ import (
 )
 
 func TestScalar(t *testing.T) {
-	t.Run("Test Open() Default DB", func(t *testing.T) {
-		var (
-			c   *JKV_DB
-			err error
-		)
+	t.Run("Test Open()", func(t *testing.T) {
+		var c = NewClient(&Options{Addr: "localhost:6379", Password: "", DB: 0})
+		var err error
+
+		defer c.Close()
 
 		a := assert.New(t)
 
-		os.Remove(DEFAULT_DB)
-
-		c = NewJKVClient()
-
-		// this will create the directory
-		err = c.Open()
-		a.Nil(err)
-
-		// this will use the directory and write/remove a file to verify it is writable
 		err = c.Open()
 		a.Nil(err)
 	})
 
-	t.Run("Test FLUSHDB()", func(t *testing.T) {
-		var (
-			c   *JKV_DB
-			err error
-		)
+	t.Run("Test FlushDB()", func(t *testing.T) {
+		var c = NewClient(&Options{Addr: "localhost:6379", Password: "", DB: 0})
+
+		defer c.Close()
+
+		ctx := context.Background()
 
 		a := assert.New(t)
 
-		c = NewJKVClient()
-
-		// this will remove the directory
-		c.FLUSHDB()
-		_, err = os.Stat(c.DBDir)
-		a.True(os.IsNotExist(err))
+		c.Open()
+		c.FlushDB(ctx)
+		rec := c.Keys(context.Background(), "*")
+		a.Nil(rec.Err())
+		a.Equal(0, len(rec.Val()))
 	})
 
 	t.Run("Set Key to Value", func(t *testing.T) {
-		var (
-			c = NewJKVClient()
-		)
+		var c = NewClient(&Options{Addr: "localhost:6379", Password: "", DB: 0})
+		defer c.Close()
+
+		ctx := context.Background()
 
 		os.Remove(DEFAULT_DB)
 
@@ -57,13 +50,18 @@ func TestScalar(t *testing.T) {
 		err := c.Open()
 		a.Nil(err)
 
-		a.Nil(c.SET("this", "that"))
+		rec := c.Set(ctx, "this", "that")
+		a.Nil(rec.Err())
+		a.Equal("OK", rec.Val())
 	})
 
 	t.Run("Del Key", func(t *testing.T) {
-		var (
-			c = NewJKVClient()
-		)
+		var c = NewClient(&Options{Addr: "localhost:6379", Password: "", DB: 0})
+		defer c.Close()
+
+		ctx := context.Background()
+
+		c.FlushDB(ctx)
 
 		os.Remove(DEFAULT_DB)
 
@@ -74,14 +72,20 @@ func TestScalar(t *testing.T) {
 
 		key := "this"
 		value := "that"
-		a.Nil(c.SET(key, value))
-		a.Nil(c.DEL(key))
+		rec := c.Set(ctx, key, value)
+		a.Nil(rec.Err())
+		a.Equal("OK", rec.Val())
+
+		rec2 := c.Del(ctx, key)
+		a.Nil(rec2.Err())
+		a.Equal(int64(1), rec2.Val())
 	})
 
 	t.Run("Get Key", func(t *testing.T) {
-		var (
-			c = NewJKVClient()
-		)
+		var c = NewClient(&Options{Addr: "localhost:6379", Password: "", DB: 0})
+		defer c.Close()
+
+		ctx := context.Background()
 
 		os.Remove(DEFAULT_DB)
 
@@ -92,16 +96,20 @@ func TestScalar(t *testing.T) {
 
 		key := "this"
 		value := "that"
-		a.Nil(c.SET(key, value))
-		data, err := c.GET(key)
-		a.Nil(err)
-		a.Equal(value, data)
+		rec := c.Set(ctx, key, value)
+		a.Nil(rec.Err())
+		a.Equal("OK", rec.Val())
+
+		rec2 := c.Get(ctx, key)
+		a.Nil(rec2.Err())
+		a.Equal(value, rec2.Val())
 	})
 
 	t.Run("Key Exists?", func(t *testing.T) {
-		var (
-			c = NewJKVClient()
-		)
+		var c = NewClient(&Options{Addr: "localhost:6379", Password: "", DB: 0})
+		defer c.Close()
+
+		ctx := context.Background()
 
 		os.Remove(DEFAULT_DB)
 
@@ -112,14 +120,20 @@ func TestScalar(t *testing.T) {
 
 		key := "this"
 		value := "that"
-		a.Nil(c.SET(key, value))
-		a.True(c.EXISTS(key))
+		rec := c.Set(ctx, key, value)
+		a.Nil(rec.Err())
+		a.Equal("OK", rec.Val())
+
+		rec2 := c.Exists(ctx, key)
+		a.Nil(rec2.Err())
+		a.Equal(int64(1), rec2.Val())
 	})
 
 	t.Run("Keys", func(t *testing.T) {
-		var (
-			c = NewJKVClient()
-		)
+		var c = NewClient(&Options{Addr: "localhost:6379", Password: "", DB: 0})
+		defer c.Close()
+
+		ctx := context.Background()
 
 		os.Remove(DEFAULT_DB)
 
@@ -130,20 +144,20 @@ func TestScalar(t *testing.T) {
 
 		key := "this"
 		value := "that"
-		a.Nil(c.SET(key, value))
-		a.True(c.EXISTS(key))
-		keys, err := c.KEYS("*")
-		a.Nil(err)
-		a.Equal(1, len(keys))
-		a.Equal(key, keys[0])
+		rec := c.Set(ctx, key, value)
+		a.Nil(rec.Err())
+		a.Equal("OK", rec.Val())
+
+		rec2 := c.Keys(ctx, "*")
+		a.Nil(rec2.Err())
+		a.Equal(1, len(rec2.Val()))
 	})
 }
 
 func TestHash(t *testing.T) {
 	t.Run("Set Hash", func(t *testing.T) {
-		var (
-			c = NewJKVClient()
-		)
+		var c = NewClient(&Options{Addr: "localhost:6379", Password: "", DB: 0})
+		defer c.Close()
 
 		os.Remove(DEFAULT_DB)
 
@@ -155,14 +169,14 @@ func TestHash(t *testing.T) {
 		hash := "hashed"
 		key := "this"
 		value := "that"
-		a.Nil(c.HSET(hash, key, value))
+		a.Nil(c.HSet(context.Background(), hash, key, value).Err())
 	})
 
 	t.Run("Get Hash", func(t *testing.T) {
-		var (
-			c = NewJKVClient()
-		)
+		var c = NewClient(&Options{Addr: "localhost:6379", Password: "", DB: 0})
+		defer c.Close()
 
+		ctx := context.Background()
 		os.Remove(DEFAULT_DB)
 
 		a := assert.New(t)
@@ -173,16 +187,17 @@ func TestHash(t *testing.T) {
 		hash := "hashed"
 		key := "this"
 		value := "that"
-		a.Nil(c.HSET(hash, key, value))
-		data, err := c.HGET(hash, key)
-		a.Nil(err)
-		a.Equal(value, data)
+		a.Nil(c.HSet(ctx, hash, key, value).Err())
+		rec := c.HGet(ctx, hash, key)
+		a.Nil(rec.Err())
+		a.Equal(value, rec.Val())
 	})
 
 	t.Run("Exists Hash", func(t *testing.T) {
-		var (
-			c = NewJKVClient()
-		)
+		var c = NewClient(&Options{Addr: "localhost:6379", Password: "", DB: 0})
+		defer c.Close()
+
+		ctx := context.Background()
 
 		os.Remove(DEFAULT_DB)
 
@@ -194,14 +209,16 @@ func TestHash(t *testing.T) {
 		hash := "hashed"
 		key := "this"
 		value := "that"
-		a.Nil(c.HSET(hash, key, value))
-		a.True(c.HEXISTS(hash, key))
+		a.Nil(c.HSet(ctx, hash, key, value).Err())
+		rec := c.HExists(ctx, hash, key)
+		a.Nil(rec.Err())
+		a.True(rec.Val())
 	})
 
 	t.Run("Del Hash and it's dir", func(t *testing.T) {
-		var (
-			c = NewJKVClient()
-		)
+		var c = NewClient(&Options{Addr: "localhost:6379", Password: "", DB: 0})
+		defer c.Close()
+		ctx := context.Background()
 
 		os.Remove(DEFAULT_DB)
 
@@ -213,7 +230,7 @@ func TestHash(t *testing.T) {
 		hash := "hashed"
 		key := "this"
 		value := "that"
-		a.Nil(c.HSET(hash, key, value))
-		a.Nil(c.HDEL(hash, key))
+		a.Nil(c.HSet(ctx, hash, key, value).Err())
+		a.Nil(c.HDel(ctx, hash, key).Err())
 	})
 }
