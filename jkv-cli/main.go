@@ -324,7 +324,7 @@ func ProcessCmd(db interface{}, cmd string, opt_x bool) {
 			if rec.Err() != nil {
 				fmt.Println("(nil)")
 			} else {
-				fmt.Printf("(integer) %d", rec.Val())
+				fmt.Printf("(integer) %d\n", rec.Val())
 			}
 		} else {
 			fmt.Println("(error) ERR wrong number of arguments for 'exists' command")
