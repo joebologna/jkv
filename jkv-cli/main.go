@@ -313,19 +313,23 @@ func ProcessCmd(db interface{}, cmd string, opt_x bool) {
 			fmt.Println("(error) ERR wrong number of arguments for 'keys' command")
 		}
 	case "EXISTS":
-		if len(tokens) == 2 {
+		if len(tokens) >= 2 {
 			ctx := context.Background()
 			var rec *jkv.IntCmd
-			if r, ok := db.(*redis.Client); ok {
-				rec = r.Exists(ctx, tokens[1])
-			} else {
-				rec = db.(*fs.Client).Exists(ctx, tokens[1])
+			var n int64
+			for _, token := range tokens[1:] {
+				if r, ok := db.(*redis.Client); ok {
+					rec = r.Exists(ctx, token)
+				} else {
+					rec = db.(*fs.Client).Exists(ctx, token)
+				}
+				if rec.Err() != nil {
+					// fmt.Println("(nil)")
+					break
+				}
+				n = n + rec.Val()
 			}
-			if rec.Err() != nil {
-				fmt.Println("(nil)")
-			} else {
-				fmt.Printf("(integer) %d\n", rec.Val())
-			}
+			fmt.Printf("(integer) %d\n", n)
 		} else {
 			fmt.Println("(error) ERR wrong number of arguments for 'exists' command")
 		}

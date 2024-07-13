@@ -24,7 +24,6 @@
 	[ "$(jkv-cli -f exists b)" = "$(jkv-cli -r exists b)" ]
 	[ "$(jkv-cli -f exists b | cut -d' ' -f2)" = "$(redis-cli exists b)" ]
 	[ "$(jkv-cli -f exists a b)" = "$(jkv-cli -r exists a b)" ]
-	skip "TODO: support multiple keys"
 	[ "$(jkv-cli -f exists a b | cut -d' ' -f2)" = "$(redis-cli exists a b)" ]
 }
 
