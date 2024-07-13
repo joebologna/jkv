@@ -5,8 +5,54 @@ import (
 	"os"
 	"testing"
 
+	"github.com/panduit-joeb/jkv"
 	"github.com/stretchr/testify/assert"
+
+	real_redis "github.com/go-redis/redis/v8"
 )
+
+func TestAgainstRealRedis(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("HSET Twice (Real)", func(t *testing.T) {
+		a := assert.New(t)
+		var (
+			rc     *real_redis.Client
+			int_rc *real_redis.IntCmd
+		)
+		rc = real_redis.NewClient(&real_redis.Options{Addr: "localhost:6379"})
+
+		a.Nil(rc.FlushDB(ctx).Err())
+		int_rc = rc.HSet(ctx, "hash1", "key1", "one", "key2", "two")
+		a.Nil(int_rc.Err())
+		a.Equal(int64(2), int_rc.Val())
+		int_rc = rc.HSet(ctx, "hash1", "key1", "one", "key2", "two")
+		a.Nil(int_rc.Err())
+		a.Equal(int64(0), int_rc.Val())
+
+		t.Cleanup(func() { rc.Close() })
+	})
+
+	t.Run("HSET Twice (JKV -r)", func(t *testing.T) {
+		a := assert.New(t)
+		var (
+			rc     *Client
+			int_rc *jkv.IntCmd
+		)
+		rc = NewClient(&Options{Addr: "localhost:6379"})
+		rc.Open()
+
+		a.Nil(rc.FlushDB(ctx).Err())
+		int_rc = rc.HSet(ctx, "hash1", "key1", "one", "key2", "two")
+		a.Nil(int_rc.Err())
+		a.Equal(int64(2), int_rc.Val())
+		int_rc = rc.HSet(ctx, "hash1", "key1", "one", "key2", "two")
+		a.Nil(int_rc.Err())
+		a.Equal(int64(0), int_rc.Val())
+
+		t.Cleanup(func() { rc.Close() })
+	})
+}
 
 func TestScalar(t *testing.T) {
 	t.Run("Test Open()", func(t *testing.T) {

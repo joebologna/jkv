@@ -63,22 +63,6 @@ func (s *StringSliceCmd) Err() error    { return s.err }
 func (s *StatusCmd) Val() string        { return s.val }
 func (s *StatusCmd) Err() error         { return s.err }
 
-type JKV_OP interface {
-	Open() error
-	Close()
-	FLUSHDB()
-	GET(key string) (string, error)
-	SET(key, value string) error
-	DEL(key string) error
-	KEYS(pattern string) ([]string, error)
-	EXISTS(key string) bool
-	HGET(hash, key string) (string, error)
-	HSET(hash, key, value string) error
-	HDEL(hash, key string) error
-	HKEYS(hash string) ([]string, error)
-	HEXISTS(hash, key string) bool
-}
-
 type Client interface {
 	Open() error
 	Close()
@@ -89,7 +73,7 @@ type Client interface {
 	Keys(ctx context.Context, pattern string) *StringSliceCmd
 	Exists(ctx context.Context, keys ...string) *IntCmd
 	HGet(ctx context.Context, hash, key string) *StringCmd
-	HSet(ctx context.Context, hash, key, value string) *IntCmd
+	HSet(ctx context.Context, hash, key string, values ...string) *IntCmd
 	HDel(ctx context.Context, hash, key string) *IntCmd
 	HKeys(ctx context.Context, hash string) *StringSliceCmd
 	HExists(ctx context.Context, hash, key string) *BoolCmd
