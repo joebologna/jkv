@@ -10,7 +10,7 @@ import (
 
 func TestScalar(t *testing.T) {
 	t.Run("Test Open()", func(t *testing.T) {
-		var c = NewClient(&Options{Addr: "localhost:6379", Password: "", DB: 0})
+		var c = NewClient(&Options{Addr: DEFAULT_DB})
 		var err error
 
 		defer c.Close()
@@ -22,7 +22,7 @@ func TestScalar(t *testing.T) {
 	})
 
 	t.Run("Test FlushDB()", func(t *testing.T) {
-		var c = NewClient(&Options{Addr: "localhost:6379", Password: "", DB: 0})
+		var c = NewClient(&Options{Addr: DEFAULT_DB})
 
 		defer c.Close()
 
@@ -38,7 +38,7 @@ func TestScalar(t *testing.T) {
 	})
 
 	t.Run("Set Key to Value", func(t *testing.T) {
-		var c = NewClient(&Options{Addr: "localhost:6379", Password: "", DB: 0})
+		var c = NewClient(&Options{Addr: DEFAULT_DB})
 		defer c.Close()
 
 		ctx := context.Background()
@@ -56,7 +56,7 @@ func TestScalar(t *testing.T) {
 	})
 
 	t.Run("Del Key", func(t *testing.T) {
-		var c = NewClient(&Options{Addr: "localhost:6379", Password: "", DB: 0})
+		var c = NewClient(&Options{Addr: DEFAULT_DB})
 		defer c.Close()
 
 		ctx := context.Background()
@@ -82,7 +82,7 @@ func TestScalar(t *testing.T) {
 	})
 
 	t.Run("Get Key", func(t *testing.T) {
-		var c = NewClient(&Options{Addr: "localhost:6379", Password: "", DB: 0})
+		var c = NewClient(&Options{Addr: DEFAULT_DB})
 		defer c.Close()
 
 		ctx := context.Background()
@@ -106,7 +106,7 @@ func TestScalar(t *testing.T) {
 	})
 
 	t.Run("Key Exists?", func(t *testing.T) {
-		var c = NewClient(&Options{Addr: "localhost:6379", Password: "", DB: 0})
+		var c = NewClient(&Options{Addr: DEFAULT_DB})
 		defer c.Close()
 
 		ctx := context.Background()
@@ -130,7 +130,7 @@ func TestScalar(t *testing.T) {
 	})
 
 	t.Run("Keys", func(t *testing.T) {
-		var c = NewClient(&Options{Addr: "localhost:6379", Password: "", DB: 0})
+		var c = NewClient(&Options{Addr: DEFAULT_DB})
 		defer c.Close()
 
 		ctx := context.Background()
@@ -156,7 +156,7 @@ func TestScalar(t *testing.T) {
 
 func TestHash(t *testing.T) {
 	t.Run("Set Hash", func(t *testing.T) {
-		var c = NewClient(&Options{Addr: "localhost:6379", Password: "", DB: 0})
+		var c = NewClient(&Options{Addr: DEFAULT_DB})
 		defer c.Close()
 
 		os.Remove(DEFAULT_DB)
@@ -173,7 +173,7 @@ func TestHash(t *testing.T) {
 	})
 
 	t.Run("Get Hash", func(t *testing.T) {
-		var c = NewClient(&Options{Addr: "localhost:6379", Password: "", DB: 0})
+		var c = NewClient(&Options{Addr: DEFAULT_DB})
 		defer c.Close()
 
 		ctx := context.Background()
@@ -194,7 +194,7 @@ func TestHash(t *testing.T) {
 	})
 
 	t.Run("Exists Hash", func(t *testing.T) {
-		var c = NewClient(&Options{Addr: "localhost:6379", Password: "", DB: 0})
+		var c = NewClient(&Options{Addr: DEFAULT_DB})
 		defer c.Close()
 
 		ctx := context.Background()
@@ -216,7 +216,7 @@ func TestHash(t *testing.T) {
 	})
 
 	t.Run("Del Hash and it's dir", func(t *testing.T) {
-		var c = NewClient(&Options{Addr: "localhost:6379", Password: "", DB: 0})
+		var c = NewClient(&Options{Addr: DEFAULT_DB})
 		defer c.Close()
 		ctx := context.Background()
 

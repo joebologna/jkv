@@ -56,7 +56,7 @@ func main() {
 			ProcessCmd(r, strings.Join(flag.Args(), " "), opt_x)
 		}
 	} else if fs_cmd {
-		f := fs.NewJKVClient()
+		f := fs.NewClient(&fs.Options{Addr: fs.DEFAULT_DB})
 		f.Open()
 
 		if prompt {
@@ -94,7 +94,7 @@ func ProcessCmd(db interface{}, cmd string, opt_x bool) {
 			if r, ok := db.(*redis.Client); ok {
 				r.FlushDB(ctx)
 			} else {
-				db.(*fs.JKV_DB).FLUSHDB()
+				db.(*fs.Client).FlushDB(ctx)
 			}
 			fmt.Println("OK")
 		} else {
@@ -102,13 +102,14 @@ func ProcessCmd(db interface{}, cmd string, opt_x bool) {
 		}
 	case "HGET":
 		if len(tokens) == 3 {
+			var rec *jkv.StringCmd
 			if r, ok := db.(*redis.Client); ok {
-				rec := r.HGet(ctx, tokens[1], tokens[2])
-				value = rec.Val()
-				err = rec.Err()
+				rec = r.HGet(ctx, tokens[1], tokens[2])
 			} else {
-				value, err = db.(*fs.JKV_DB).HGET(tokens[1], tokens[2])
+				rec = db.(*fs.Client).HGet(ctx, tokens[1], tokens[2])
 			}
+			value = rec.Val()
+			err = rec.Err()
 			if err != nil {
 				fmt.Println("(nil)")
 			} else {
@@ -127,7 +128,7 @@ func ProcessCmd(db interface{}, cmd string, opt_x bool) {
 					return
 				}
 			} else {
-				if db.(*fs.JKV_DB).EXISTS(tokens[1]) {
+				if db.(*fs.Client).Exists(ctx, tokens[1]).Val() != 0 {
 					fmt.Println("(error) WRONGTYPE Operation against a key holding the wrong kind of value")
 					return
 				}
@@ -141,7 +142,7 @@ func ProcessCmd(db interface{}, cmd string, opt_x bool) {
 					if r, ok := db.(*redis.Client); ok {
 						err = r.HSet(ctx, hash, key, value).Err()
 					} else {
-						err = db.(*fs.JKV_DB).HSET(hash, key, value)
+						err = db.(*fs.Client).HSet(ctx, hash, key, value).Err()
 					}
 					if err != nil {
 						fmt.Println(err.Error())
@@ -161,7 +162,7 @@ func ProcessCmd(db interface{}, cmd string, opt_x bool) {
 			if r, ok := db.(*redis.Client); ok {
 				err = r.HDel(ctx, tokens[1], tokens[2]).Err()
 			} else {
-				err = db.(*fs.JKV_DB).HDEL(tokens[1], tokens[2])
+				err = db.(*fs.Client).HDel(ctx, tokens[1], tokens[2]).Err()
 			}
 			if err != nil {
 				fmt.Println("(nil)")
@@ -176,13 +177,14 @@ func ProcessCmd(db interface{}, cmd string, opt_x bool) {
 			ctx := context.Background()
 			var values []string
 			var err error
+			var rec *jkv.StringSliceCmd
 			if r, ok := db.(*redis.Client); ok {
-				rec := r.HKeys(ctx, tokens[1])
-				values = rec.Val()
-				err = rec.Err()
+				rec = r.HKeys(ctx, tokens[1])
 			} else {
-				values, err = db.(*fs.JKV_DB).HKEYS(tokens[1])
+				rec = db.(*fs.Client).HKeys(ctx, tokens[1])
 			}
+			values = rec.Val()
+			err = rec.Err()
 			if err != nil {
 				fmt.Println("(nil)")
 			} else {
@@ -196,14 +198,13 @@ func ProcessCmd(db interface{}, cmd string, opt_x bool) {
 	case "HEXISTS":
 		if len(tokens) == 3 {
 			ctx := context.Background()
-			var exists bool
+			var rec *jkv.BoolCmd
 			if r, ok := db.(*redis.Client); ok {
-				rec := r.HExists(ctx, tokens[1], tokens[2])
-				exists = rec.Val()
+				rec = r.HExists(ctx, tokens[1], tokens[2])
 			} else {
-				exists = db.(*fs.JKV_DB).HEXISTS(tokens[1], tokens[2])
+				rec = db.(*fs.Client).HExists(ctx, tokens[1], tokens[2])
 			}
-			if exists {
+			if rec.Val() {
 				fmt.Println("(integer) 1")
 			} else {
 				fmt.Println("(integer) 0")
@@ -216,13 +217,14 @@ func ProcessCmd(db interface{}, cmd string, opt_x bool) {
 			ctx := context.Background()
 			var value string
 			var err error
+			var rec *jkv.StringCmd
 			if r, ok := db.(*redis.Client); ok {
-				rec := r.Get(ctx, tokens[1])
-				value = rec.Val()
-				err = rec.Err()
+				rec = r.Get(ctx, tokens[1])
 			} else {
-				value, err = db.(*fs.JKV_DB).GET(tokens[1])
+				rec = db.(*fs.Client).Get(ctx, tokens[1])
 			}
+			value = rec.Val()
+			err = rec.Err()
 			if err != nil {
 				fmt.Println("(nil)")
 			} else {
@@ -244,13 +246,14 @@ func ProcessCmd(db interface{}, cmd string, opt_x bool) {
 					}
 					return
 				}
+				var rec *jkv.StatusCmd
 				if r, ok := db.(*redis.Client); ok {
-					rec := r.Set(ctx, tokens[1], string(buf[:n-1]))
-					value = rec.Val()
-					err = rec.Err()
+					rec = r.Set(ctx, tokens[1], string(buf[:n-1]))
 				} else {
-					err = db.(*fs.JKV_DB).SET(tokens[1], string(buf[:n-1]))
+					rec = db.(*fs.Client).Set(ctx, tokens[1], string(buf[:n-1]))
 				}
+				value = rec.Val()
+				err = rec.Err()
 				if err != nil {
 					fmt.Println("(nil)")
 				} else {
@@ -262,19 +265,13 @@ func ProcessCmd(db interface{}, cmd string, opt_x bool) {
 		} else {
 			if len(tokens) == 3 {
 				ctx := context.Background()
-				var err error
+				var rec *jkv.StatusCmd
 				if r, ok := db.(*redis.Client); ok {
-					rec := r.Set(ctx, tokens[1], tokens[2])
-					value = rec.Val()
-					err = rec.Err()
+					rec = r.Set(ctx, tokens[1], tokens[2])
 				} else {
-					err = db.(*fs.JKV_DB).SET(tokens[1], tokens[2])
+					rec = db.(*fs.Client).Set(ctx, tokens[1], tokens[2])
 				}
-				if err != nil {
-					fmt.Println("(nil)")
-				} else {
-					fmt.Println("OK")
-				}
+				fmt.Println(rec.Val())
 			} else {
 				fmt.Println("(error) ERR wrong number of arguments for 'set' command")
 			}
@@ -282,14 +279,13 @@ func ProcessCmd(db interface{}, cmd string, opt_x bool) {
 	case "DEL":
 		if len(tokens) == 2 {
 			ctx := context.Background()
-			var err error
+			var rec *jkv.IntCmd
 			if r, ok := db.(*redis.Client); ok {
-				rec := r.Del(ctx, []string{tokens[1]}...)
-				err = rec.Err()
+				rec = r.Del(ctx, []string{tokens[1]}...)
 			} else {
-				err = db.(*fs.JKV_DB).DEL(tokens[1])
+				rec = db.(*fs.Client).Del(ctx, tokens[1])
 			}
-			if err != nil {
+			if rec.Err() != nil {
 				fmt.Println("(nil)")
 			} else {
 				fmt.Printf("\"%s\"\n", value)
@@ -300,14 +296,13 @@ func ProcessCmd(db interface{}, cmd string, opt_x bool) {
 	case "KEYS":
 		if len(tokens) == 2 {
 			ctx := context.Background()
-			var err error
+			var rec *jkv.StringSliceCmd
 			if r, ok := db.(*redis.Client); ok {
-				rec := r.Keys(ctx, tokens[1])
-				err = rec.Err()
+				rec = r.Keys(ctx, tokens[1])
 			} else {
-				values, err = db.(*fs.JKV_DB).KEYS(tokens[1])
+				rec = db.(*fs.Client).Keys(ctx, tokens[1])
 			}
-			if err != nil {
+			if rec.Err() != nil {
 				fmt.Println("(nil)")
 			} else {
 				for i, v := range values {
@@ -320,20 +315,17 @@ func ProcessCmd(db interface{}, cmd string, opt_x bool) {
 	case "EXISTS":
 		if len(tokens) == 2 {
 			ctx := context.Background()
-			var nvalues int64
+			var rec *jkv.IntCmd
 			if r, ok := db.(*redis.Client); ok {
-				rec := r.Exists(ctx, tokens[1])
-				err = rec.Err()
-				nvalues = rec.Val()
+				rec = r.Exists(ctx, tokens[1])
 			} else {
-				exists := db.(*fs.JKV_DB).EXISTS(tokens[1])
-				if exists {
-					nvalues = 1
-				} else {
-					nvalues = 0
-				}
+				rec = db.(*fs.Client).Exists(ctx, tokens[1])
 			}
-			fmt.Printf("(integer) %d", nvalues)
+			if rec.Err() != nil {
+				fmt.Println("(nil)")
+			} else {
+				fmt.Printf("(integer) %d", rec.Val())
+			}
 		} else {
 			fmt.Println("(error) ERR wrong number of arguments for 'exists' command")
 		}

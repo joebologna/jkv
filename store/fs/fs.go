@@ -48,7 +48,10 @@ func (j *Client) Open() error {
 func (j *Client) Close() { j.IsOpen = false }
 
 // FLUSHDB a database by removing the j.dbDir and everything underneath, ignore errors for now
-func (j *Client) FlushDB() { os.RemoveAll(j.DBDir) }
+func (j *Client) FlushDB(ctx context.Context) *jkv.StatusCmd {
+	os.RemoveAll(j.DBDir)
+	return jkv.NewStatusCmd("OK", nil)
+}
 
 // Return data in scalar key data, error is file is missing or inaccessible
 func (c *Client) Get(ctx context.Context, key string) *jkv.StringCmd {
@@ -64,7 +67,7 @@ func (c *Client) Set(ctx context.Context, key, value string) *jkv.StatusCmd {
 	if c.IsOpen {
 		return jkv.NewStatusCmd("OK", os.WriteFile(c.DBDir+"/scalars/"+key, []byte(value), 0660))
 	}
-	return jkv.NewStatusCmd("", notOpen())
+	return jkv.NewStatusCmd("(nil)", notOpen())
 }
 
 // Delete a key by removing the scalar file
@@ -82,6 +85,9 @@ func (c *Client) Keys(ctx context.Context, pattern string) *jkv.StringSliceCmd {
 	for _, dir := range []string{c.ScalarDir(), c.HashDir()} {
 		entries, err := os.ReadDir(dir)
 		if err != nil {
+			if os.IsNotExist(err) {
+				return jkv.NewStringSliceCmd([]string{}, nil)
+			}
 			return jkv.NewStringSliceCmd([]string{}, err)
 		}
 		for _, file := range entries {
