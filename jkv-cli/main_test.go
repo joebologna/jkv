@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"testing"
 
 	"github.com/panduit-joeb/jkv/store/fs"
@@ -9,12 +10,13 @@ import (
 
 func TestHGET(t *testing.T) {
 	t.Run("Test HGET", func(t *testing.T) {
-		f := fs.NewJKVClient()
+		ctx := context.Background()
+		f := fs.NewClient(&fs.Options{})
 		f.Open()
-		f.FLUSHDB()
-		f.HSET("other", "one", "value")
-		value, err := f.HGET("other", "one")
-		assert.Nil(t, err)
-		assert.Equal(t, "value", value)
+		f.FlushDB(ctx)
+		f.HSet(ctx, "other", "one", "value")
+		rec := f.HGet(ctx, "other", "one")
+		assert.Nil(t, rec.Err())
+		assert.Equal(t, "value", rec.Val())
 	})
 }

@@ -45,7 +45,7 @@ func main() {
 
 			fmt.Printf(r.DBDir + "> ")
 			for scanner.Scan() {
-				ProcessCmd(r, scanner.Text(), opt_x)
+				ProcessCmd(r, scanner.Text(), opt_x, isPipe())
 				fmt.Printf(r.DBDir + "> ")
 			}
 
@@ -53,7 +53,7 @@ func main() {
 				fmt.Println("Error reading input:", err)
 			}
 		} else {
-			ProcessCmd(r, strings.Join(flag.Args(), " "), opt_x)
+			ProcessCmd(r, strings.Join(flag.Args(), " "), opt_x, isPipe())
 		}
 	} else if fs_cmd {
 		f := fs.NewClient(&fs.Options{Addr: fs.DEFAULT_DB})
@@ -64,7 +64,7 @@ func main() {
 
 			fmt.Printf(f.DBDir + "> ")
 			for scanner.Scan() {
-				ProcessCmd(f, scanner.Text(), opt_x)
+				ProcessCmd(f, scanner.Text(), opt_x, isPipe())
 				fmt.Printf(f.DBDir + "> ")
 			}
 
@@ -72,16 +72,15 @@ func main() {
 				fmt.Println("Error reading input:", err)
 			}
 		} else {
-			ProcessCmd(f, strings.Join(flag.Args(), " "), opt_x)
+			ProcessCmd(f, strings.Join(flag.Args(), " "), opt_x, isPipe())
 		}
 	}
 }
 
-func ProcessCmd(db interface{}, cmd string, opt_x bool) {
+func ProcessCmd(db interface{}, cmd string, opt_x, is_pipe bool) {
 	var (
-		value  string
-		values []string
-		err    error
+		value string
+		err   error
 	)
 	tokens := strings.Fields(cmd)
 	if len(tokens) == 0 {
@@ -98,7 +97,7 @@ func ProcessCmd(db interface{}, cmd string, opt_x bool) {
 			}
 			fmt.Println("OK")
 		} else {
-			fmt.Println("(error) ERR syntax error")
+			report("(error)", "ERR syntax error", is_pipe)
 		}
 	case "HGET":
 		if len(tokens) == 3 {
@@ -119,42 +118,64 @@ func ProcessCmd(db interface{}, cmd string, opt_x bool) {
 			fmt.Println("(nil)")
 		}
 	case "HSET":
-		fmt.Println("add -x support")
-		if len(tokens) > 2 {
-			ctx := context.Background()
-			if r, ok := db.(*redis.Client); ok {
-				if r.Exists(ctx, tokens[1]).Val() != 0 {
-					fmt.Println("(error) WRONGTYPE Operation against a key holding the wrong kind of value")
-					return
-				}
-			} else {
-				if db.(*fs.Client).Exists(ctx, tokens[1]).Val() != 0 {
-					fmt.Println("(error) WRONGTYPE Operation against a key holding the wrong kind of value")
-					return
-				}
-			}
-			if len(tokens) >= 4 && ((len(tokens)-2)%2 == 0) {
-				hash := tokens[1]
-				var n int
-				for n = 0; n < (len(tokens)-1)/2; n++ {
-					key := tokens[2+n*2]
-					value = tokens[2+n*2+1]
-					if r, ok := db.(*redis.Client); ok {
-						err = r.HSet(ctx, hash, key, value).Err()
-					} else {
-						err = db.(*fs.Client).HSet(ctx, hash, key, value).Err()
+		ctx := context.Background()
+		if opt_x {
+			if len(tokens) == 3 {
+				var buf = make([]byte, 1024*1024)
+				var n = 0
+				n, err = os.Stdin.Read(buf)
+				if n == 0 {
+					if err != io.EOF {
+						panic(err.Error())
 					}
-					if err != nil {
-						fmt.Println(err.Error())
+					return
+				}
+				var rec *jkv.IntCmd
+				if r, ok := db.(*redis.Client); ok {
+					rec = r.HSet(ctx, tokens[1], tokens[2], string(buf[:n-1]))
+				} else {
+					rec = db.(*fs.Client).HSet(ctx, tokens[1], tokens[2], string(buf[:n-1]))
+				}
+				report("(integer)", fmt.Sprintf("%d\n", rec.Val()), is_pipe)
+			} else {
+				report("(error)", "ERR wrong number of arguments for 'hset' command", is_pipe)
+			}
+		} else {
+			if len(tokens) > 2 {
+				if r, ok := db.(*redis.Client); ok {
+					if r.Exists(ctx, tokens[1]).Val() != 0 {
+						report("(error)", "WRONGTYPE Operation against a key holding the wrong kind of value", is_pipe)
+						return
+					}
+				} else {
+					if db.(*fs.Client).Exists(ctx, tokens[1]).Val() != 0 {
+						report("(error)", "WRONGTYPE Operation against a key holding the wrong kind of value", is_pipe)
 						return
 					}
 				}
-				fmt.Printf("(integer) %d\n", n)
+				if len(tokens) >= 4 && ((len(tokens)-2)%2 == 0) {
+					hash := tokens[1]
+					var n int
+					for n = 0; n < (len(tokens)-1)/2; n++ {
+						key := tokens[2+n*2]
+						value = tokens[2+n*2+1]
+						if r, ok := db.(*redis.Client); ok {
+							err = r.HSet(ctx, hash, key, value).Err()
+						} else {
+							err = db.(*fs.Client).HSet(ctx, hash, key, value).Err()
+						}
+						if err != nil {
+							fmt.Println(err.Error())
+							return
+						}
+					}
+					report("(integer)", fmt.Sprintf("%d", n), is_pipe)
+				} else {
+					report("(error)", "ERR wrong number of arguments for 'hset' command", is_pipe)
+				}
 			} else {
-				fmt.Println("(error) ERR wrong number of arguments for 'hset' command")
+				fmt.Println("(nil)")
 			}
-		} else {
-			fmt.Println("(nil)")
 		}
 	case "HDEL":
 		if len(tokens) == 2 {
@@ -193,7 +214,7 @@ func ProcessCmd(db interface{}, cmd string, opt_x bool) {
 				}
 			}
 		} else {
-			fmt.Println("(error) ERR wrong number of arguments for 'hkeys' command")
+			report("(error)", "ERR wrong number of arguments for 'hkeys' command", is_pipe)
 		}
 	case "HEXISTS":
 		if len(tokens) == 3 {
@@ -205,12 +226,12 @@ func ProcessCmd(db interface{}, cmd string, opt_x bool) {
 				rec = db.(*fs.Client).HExists(ctx, tokens[1], tokens[2])
 			}
 			if rec.Val() {
-				fmt.Println("(integer) 1")
+				report("(integer)", "1", is_pipe)
 			} else {
-				fmt.Println("(integer) 0")
+				report("(integer)", "0", is_pipe)
 			}
 		} else {
-			fmt.Println("(error) ERR wrong number of arguments for 'exists' command")
+			report("(error)", "ERR wrong number of arguments for 'exists' command", is_pipe)
 		}
 	case "GET":
 		if len(tokens) == 2 {
@@ -252,9 +273,7 @@ func ProcessCmd(db interface{}, cmd string, opt_x bool) {
 				} else {
 					rec = db.(*fs.Client).Set(ctx, tokens[1], string(buf[:n-1]))
 				}
-				value = rec.Val()
-				err = rec.Err()
-				if err != nil {
+				if rec.Err() != nil {
 					fmt.Println("(nil)")
 				} else {
 					fmt.Println("OK")
@@ -273,7 +292,7 @@ func ProcessCmd(db interface{}, cmd string, opt_x bool) {
 				}
 				fmt.Println(rec.Val())
 			} else {
-				fmt.Println("(error) ERR wrong number of arguments for 'set' command")
+				report("(error)", "ERR wrong number of arguments for 'set' command", is_pipe)
 			}
 		}
 	case "DEL":
@@ -288,7 +307,7 @@ func ProcessCmd(db interface{}, cmd string, opt_x bool) {
 			if rec.Err() != nil {
 				fmt.Println("(nil)")
 			} else {
-				fmt.Printf("\"%s\"\n", value)
+				report("(integer)", fmt.Sprintf("%d", rec.Val()), is_pipe)
 			}
 		} else {
 			fmt.Println("(nil)")
@@ -305,12 +324,12 @@ func ProcessCmd(db interface{}, cmd string, opt_x bool) {
 			if rec.Err() != nil {
 				fmt.Println("(nil)")
 			} else {
-				for i, v := range values {
+				for i, v := range rec.Val() {
 					fmt.Printf("%d) \"%s\"\n", i+1, v)
 				}
 			}
 		} else {
-			fmt.Println("(error) ERR wrong number of arguments for 'keys' command")
+			report("(error)", "ERR wrong number of arguments for 'keys' command", is_pipe)
 		}
 	case "EXISTS":
 		if len(tokens) >= 2 {
@@ -329,11 +348,23 @@ func ProcessCmd(db interface{}, cmd string, opt_x bool) {
 				}
 				n = n + rec.Val()
 			}
-			fmt.Printf("(integer) %d\n", n)
+			report("(integer)", fmt.Sprintf("%d", n), is_pipe)
 		} else {
-			fmt.Println("(error) ERR wrong number of arguments for 'exists' command")
+			report("(error)", "ERR wrong number of arguments for 'exists' command", is_pipe)
 		}
 	default:
-		fmt.Printf("(error) ERR unknown command '%s', with args beginning with:\n", tokens[0])
+		report("(error)", fmt.Sprintf("ERR unknown command '%s', with args beginning with:\n", tokens[0]), is_pipe)
 	}
+}
+
+func isPipe() bool {
+	fi, _ := os.Stdout.Stat()
+	return (fi.Mode() & os.ModeCharDevice) == 0
+}
+
+func report(prefix, msg string, is_pipe bool) {
+	if !is_pipe {
+		msg = prefix + " " + msg
+	}
+	fmt.Println(msg)
 }

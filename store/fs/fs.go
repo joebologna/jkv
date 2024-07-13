@@ -74,7 +74,11 @@ func (c *Client) Set(ctx context.Context, key, value string) *jkv.StatusCmd {
 func (c *Client) Del(ctx context.Context, keys ...string) *jkv.IntCmd {
 	if c.IsOpen {
 		// todo: add a loop here
-		return jkv.NewIntCmd(int64(len(keys)), os.Remove(c.ScalarDir()+keys[0]))
+		n := 0
+		if os.Remove(c.ScalarDir()+keys[0]) == nil {
+			n++
+		}
+		return jkv.NewIntCmd(int64(n), nil)
 	}
 	return jkv.NewIntCmd(0, notOpen())
 }
@@ -124,7 +128,7 @@ func (c *Client) HGet(ctx context.Context, hash, key string) *jkv.StringCmd {
 
 // Create a hash directory and store the data in a key file
 // todo: reject a hash if a scalar key exists
-func (c *Client) HSet(ctx context.Context, hash, key, value string) *jkv.IntCmd {
+func (c *Client) HSet(ctx context.Context, hash, key string, values ...string) *jkv.IntCmd {
 	if c.IsOpen {
 		rec := c.Exists(ctx, hash)
 		if rec.Err() != nil {
@@ -136,7 +140,7 @@ func (c *Client) HSet(ctx context.Context, hash, key, value string) *jkv.IntCmd 
 		if err := os.MkdirAll(c.HashDir()+hash, 0775); err != nil {
 			return jkv.NewIntCmd(0, rec.Err())
 		}
-		if err := os.WriteFile(c.HashDir()+hash+"/"+key, []byte(value), 0664); err != nil {
+		if err := os.WriteFile(c.HashDir()+hash+"/"+key, []byte(values[0]), 0664); err != nil {
 			return jkv.NewIntCmd(0, rec.Err())
 		}
 		jkv.NewIntCmd(1, nil)
