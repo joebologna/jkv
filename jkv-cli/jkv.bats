@@ -30,3 +30,8 @@
 @test "Test SET Syntax Error" {
 	[ "$(jkv-cli -f set a b c)" = "$(jkv-cli -r set a b c)" ]
 }
+
+@test "Test HSET" {
+	[ "$(jkv-cli -f hset hash1 key1 one key2 two)" = "$(jkv-cli -r hset hash1 key1 one key2 two)" ]
+	[ "$(jkv-cli -f hset hash1 key1 one key2 two)" = "$(redis-cli hset hash1 key1 one key2 two)" ]
+}
