@@ -100,10 +100,15 @@ func (c *Client) HGet(ctx context.Context, hash, key string) *jkv.StringCmd {
 }
 
 // Create a hash directory and store the data in a key file
-func (c *Client) HSet(ctx context.Context, hash, key string, values ...string) *jkv.IntCmd {
+func (c *Client) HSet(ctx context.Context, hash string, values ...string) *jkv.IntCmd {
 	var rec *real_redis.IntCmd
 	if c.IsOpen {
-		rec = c.RedisClient.HSet(ctx, hash, key, values)
+		var valueMap = map[string]string{}
+		for i := 0; i < len(values); i++ {
+			valueMap[values[i]] = values[i+1]
+			i++
+		}
+		rec = c.RedisClient.HSet(ctx, hash, map[string]string{values[0]: values[1], values[2]: values[3]})
 		return jkv.NewIntCmd(rec.Val(), rec.Err())
 	}
 	return jkv.NewIntCmd(0, notOpen())

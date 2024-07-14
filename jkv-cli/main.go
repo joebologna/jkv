@@ -154,7 +154,7 @@ func ProcessCmd(db interface{}, cmd string, opt_x, is_pipe bool) {
 					}
 				}
 				if r, ok := db.(*redis.Client); ok {
-					rec := r.HSet(ctx, tokens[1], tokens[2], tokens[3])
+					rec := r.HSet(ctx, tokens[1], tokens[2:]...)
 					if rec.Err() != nil {
 						fmt.Println(rec.Err().Error())
 						return

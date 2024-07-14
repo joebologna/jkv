@@ -73,7 +73,7 @@ type Client interface {
 	Keys(ctx context.Context, pattern string) *StringSliceCmd
 	Exists(ctx context.Context, keys ...string) *IntCmd
 	HGet(ctx context.Context, hash, key string) *StringCmd
-	HSet(ctx context.Context, hash, key string, values ...string) *IntCmd
+	HSet(ctx context.Context, hash string, values ...string) *IntCmd
 	HDel(ctx context.Context, hash, key string) *IntCmd
 	HKeys(ctx context.Context, hash string) *StringSliceCmd
 	HExists(ctx context.Context, hash, key string) *BoolCmd

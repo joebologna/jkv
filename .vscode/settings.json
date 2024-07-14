@@ -10,6 +10,7 @@
         "HKEYS",
         "HSET",
         "initdb",
+        "mgmt",
         "panduit",
         "rdbrip",
         "stretchr",

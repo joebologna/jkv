@@ -132,7 +132,7 @@ func (c *Client) HGet(ctx context.Context, hash, key string) *jkv.StringCmd {
 
 // Create a hash directory and store the data in a key file
 // todo: reject a hash if a scalar key exists
-func (c *Client) HSet(ctx context.Context, hash, key string, values ...string) *jkv.IntCmd {
+func (c *Client) HSet(ctx context.Context, hash string, values ...string) *jkv.IntCmd {
 	if c.IsOpen {
 		rec := c.Exists(ctx, hash)
 		if rec.Err() != nil {
@@ -144,7 +144,8 @@ func (c *Client) HSet(ctx context.Context, hash, key string, values ...string) *
 		if err := os.MkdirAll(c.HashDir()+hash, 0775); err != nil {
 			return jkv.NewIntCmd(0, rec.Err())
 		}
-		if err := os.WriteFile(c.HashDir()+hash+"/"+key, []byte(values[0]), 0664); err != nil {
+		key := values[0]
+		if err := os.WriteFile(c.HashDir()+hash+"/"+key, []byte(values[1]), 0664); err != nil {
 			return jkv.NewIntCmd(0, rec.Err())
 		}
 		return jkv.NewIntCmd(1, nil)
