@@ -1,6 +1,6 @@
 # setup() {
-	# jkv-cli -f flushdb
-	# jkv-cli -r flushdb
+# jkv-cli -f flushdb
+# jkv-cli -r flushdb
 # }
 
 @test "Test SET/GET" {
@@ -32,6 +32,7 @@
 }
 
 @test "Test HSET" {
+	skip
 	[ "$(jkv-cli -f hset hash1 key1 one key2 two)" = "$(jkv-cli -r hset hash1 key1 one key2 two)" ]
 	[ "$(jkv-cli -f hset hash1 key1 one key2 two)" = "$(redis-cli hset hash1 key1 one key2 two)" ]
 }

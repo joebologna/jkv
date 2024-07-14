@@ -107,6 +107,9 @@ func (c *Client) Exists(ctx context.Context, keys ...string) *jkv.IntCmd {
 	if c.IsOpen {
 		// todo: add a loop here
 		if _, err := os.Stat(c.ScalarDir() + keys[0]); err != nil {
+			if os.IsNotExist(err) {
+				return jkv.NewIntCmd(int64(0), nil)
+			}
 			return jkv.NewIntCmd(0, err)
 		}
 		// return jkv.NewIntCmd(int64(len(keys)), nil)
@@ -144,7 +147,7 @@ func (c *Client) HSet(ctx context.Context, hash, key string, values ...string) *
 		if err := os.WriteFile(c.HashDir()+hash+"/"+key, []byte(values[0]), 0664); err != nil {
 			return jkv.NewIntCmd(0, rec.Err())
 		}
-		jkv.NewIntCmd(1, nil)
+		return jkv.NewIntCmd(1, nil)
 	}
 	return jkv.NewIntCmd(0, notOpen())
 }

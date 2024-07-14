@@ -30,3 +30,21 @@ setup() {
     [ "$(jkv-cli set key3 three)" = "OK" ]
     [ "$(jkv-cli del key1 key2 key3)" = "3" ]
 }
+
+@test "Test HSET -x" {
+    jkv-cli -f hset hash1 key1 one key2 two
+    jkv-cli -r hset hash1 key1 one key2 two
+}
+
+@test "Test SET -x" {
+    jkv-cli -f hset hash1 key1 one key2 two
+    jkv-cli -r hset hash1 key1 one key2 two
+}
+
+@test "Test HSET 2+ keys -f" {
+    [ "$(jkv-cli -f hset hash1 key1 one key2 two)" = "2" ]
+}
+
+@test "Test HSET 2+ keys -r" {
+    [ "$(jkv-cli -r hset hash1 key1 one key2 two)" = "2" ]
+}

@@ -153,25 +153,34 @@ func ProcessCmd(db interface{}, cmd string, opt_x, is_pipe bool) {
 						return
 					}
 				}
-				if len(tokens) >= 4 && ((len(tokens)-2)%2 == 0) {
-					hash := tokens[1]
-					var n int
-					for n = 0; n < (len(tokens)-1)/2; n++ {
-						key := tokens[2+n*2]
-						value = tokens[2+n*2+1]
-						if r, ok := db.(*redis.Client); ok {
-							err = r.HSet(ctx, hash, key, value).Err()
-						} else {
-							err = db.(*fs.Client).HSet(ctx, hash, key, value).Err()
-						}
-						if err != nil {
-							fmt.Println(err.Error())
-							return
-						}
+				if r, ok := db.(*redis.Client); ok {
+					rec := r.HSet(ctx, tokens[1], tokens[2], tokens[3])
+					if rec.Err() != nil {
+						fmt.Println(rec.Err().Error())
+						return
 					}
-					report("(integer)", fmt.Sprintf("%d", n), is_pipe)
+					report("(integer)", fmt.Sprintf("%d", rec.Val()), is_pipe)
 				} else {
-					report("(error)", "ERR wrong number of arguments for 'hset' command", is_pipe)
+					if len(tokens) >= 4 && ((len(tokens)-2)%2 == 0) {
+						hash := tokens[1]
+						var n int
+						for n = 0; n < (len(tokens)-1)/2; n++ {
+							key := tokens[2+n*2]
+							value = tokens[2+n*2+1]
+							if r, ok := db.(*redis.Client); ok {
+								err = r.HSet(ctx, hash, key, value).Err()
+							} else {
+								err = db.(*fs.Client).HSet(ctx, hash, key, value).Err()
+							}
+							if err != nil {
+								fmt.Println(err.Error())
+								return
+							}
+						}
+						report("(integer)", fmt.Sprintf("%d", n), is_pipe)
+					} else {
+						report("(error)", "ERR wrong number of arguments for 'hset' command", is_pipe)
+					}
 				}
 			} else {
 				fmt.Println("(nil)")
