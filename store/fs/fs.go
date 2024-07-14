@@ -73,10 +73,11 @@ func (c *Client) Set(ctx context.Context, key, value string) *jkv.StatusCmd {
 // Delete a key by removing the scalar file
 func (c *Client) Del(ctx context.Context, keys ...string) *jkv.IntCmd {
 	if c.IsOpen {
-		// todo: add a loop here
 		n := 0
-		if os.Remove(c.ScalarDir()+keys[0]) == nil {
-			n++
+		for _, key := range keys {
+			if os.Remove(c.ScalarDir()+key) == nil {
+				n++
+			}
 		}
 		return jkv.NewIntCmd(int64(n), nil)
 	}

@@ -296,16 +296,16 @@ func ProcessCmd(db interface{}, cmd string, opt_x, is_pipe bool) {
 			}
 		}
 	case "DEL":
-		if len(tokens) == 2 {
+		if len(tokens) >= 2 {
 			ctx := context.Background()
 			var rec *jkv.IntCmd
 			if r, ok := db.(*redis.Client); ok {
-				rec = r.Del(ctx, []string{tokens[1]}...)
+				rec = r.Del(ctx, tokens[1:]...)
 			} else {
-				rec = db.(*fs.Client).Del(ctx, tokens[1])
+				rec = db.(*fs.Client).Del(ctx, tokens[1:]...)
 			}
 			if rec.Err() != nil {
-				fmt.Println("(nil)")
+				fmt.Println("(nil)", rec.Err().Error())
 			} else {
 				report("(integer)", fmt.Sprintf("%d", rec.Val()), is_pipe)
 			}
