@@ -12,6 +12,10 @@
 	[ "$(jkv-cli -f set a b)" = "$(jkv-cli -r set a b)" ]
 	[ "$(jkv-cli -f del a)" = "$(jkv-cli -r del a)" ]
 	[ "$(jkv-cli -f get a)" = "$(jkv-cli -r get a)" ]
+	[ "$(jkv-cli -f set key1 one)" = "$(jkv-cli -r set key1 one)" ]
+	[ "$(jkv-cli -f set key2 two)" = "$(jkv-cli -r set key2 two)" ]
+	[ "$(jkv-cli -f set key3 three)" = "$(jkv-cli -r set key3 three)" ]
+	[ "$(jkv-cli -f del key1 key2 key3)" = "$(jkv-cli -r del key1 key2 key3)" ]
 }
 
 @test "Test EXISTS" {
@@ -35,4 +39,11 @@
 	skip
 	[ "$(jkv-cli -f hset hash1 key1 one key2 two)" = "$(jkv-cli -r hset hash1 key1 one key2 two)" ]
 	[ "$(jkv-cli -f hset hash1 key1 one key2 two)" = "$(redis-cli hset hash1 key1 one key2 two)" ]
+}
+
+@test "Test redis-cli" {
+	[ "$(redis-cli set key1 one)" = "OK" ]
+	[ "$(redis-cli set key2 one)" = "OK" ]
+	[ "$(redis-cli set key3 one)" = "OK" ]
+	[ "$(redis-cli del key1 key2 key3)" = "3" ]
 }

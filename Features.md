@@ -13,7 +13,7 @@ This script requires:
   - [x] redis-cli hset Networks :default dhcp
 - screens/main.go
   - [x] dbutil.UpsertItem(key, screen_data.String()) -> convert to HSet
-  - [ ] rdb.Del()
+  - [x] rdb.Del()
 - upload-backgrounds
   - redis-cli -x HSET hkey key <file
 - [ ] redis-cli HSET RunModes Production '{"Debug":true}' Dev '{"Debug":true}' :current Dev
