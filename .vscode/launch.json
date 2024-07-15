@@ -11,7 +11,7 @@
             "mode": "auto",
             "program": "${fileDirname}",
             "args": [
-                "-f",
+                "-r",
                 "hset",
                 "hash",
                 "key1",

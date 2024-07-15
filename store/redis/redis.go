@@ -103,12 +103,11 @@ func (c *Client) HGet(ctx context.Context, hash, key string) *jkv.StringCmd {
 func (c *Client) HSet(ctx context.Context, hash string, values ...string) *jkv.IntCmd {
 	var rec *real_redis.IntCmd
 	if c.IsOpen {
-		var valueMap = map[string]string{}
-		for i := 0; i < len(values); i++ {
-			valueMap[values[i]] = values[i+1]
-			i++
+		var valueMap []interface{}
+		for _, v := range values {
+			valueMap = append(valueMap, v)
 		}
-		rec = c.RedisClient.HSet(ctx, hash, map[string]string{values[0]: values[1], values[2]: values[3]})
+		rec = c.RedisClient.HSet(ctx, hash, valueMap...)
 		return jkv.NewIntCmd(rec.Val(), rec.Err())
 	}
 	return jkv.NewIntCmd(0, notOpen())

@@ -143,24 +143,18 @@ func ProcessCmd(db interface{}, cmd string, opt_x, is_pipe bool) {
 		} else {
 			if len(tokens) > 2 {
 				if r, ok := db.(*redis.Client); ok {
-					if r.Exists(ctx, tokens[1]).Val() != 0 {
-						report("(error)", "WRONGTYPE Operation against a key holding the wrong kind of value", is_pipe)
-						return
-					}
-				} else {
-					if db.(*fs.Client).Exists(ctx, tokens[1]).Val() != 0 {
-						report("(error)", "WRONGTYPE Operation against a key holding the wrong kind of value", is_pipe)
-						return
-					}
-				}
-				if r, ok := db.(*redis.Client); ok {
 					rec := r.HSet(ctx, tokens[1], tokens[2:]...)
 					if rec.Err() != nil {
 						fmt.Println(rec.Err().Error())
 						return
 					}
 					report("(integer)", fmt.Sprintf("%d", rec.Val()), is_pipe)
+					return
 				} else {
+					if db.(*fs.Client).Exists(ctx, tokens[1]).Val() != 0 {
+						report("(error)", "WRONGTYPE Operation against a key holding the wrong kind of value", is_pipe)
+						return
+					}
 					if len(tokens) >= 4 && ((len(tokens)-2)%2 == 0) {
 						var rec *jkv.IntCmd
 						if r, ok := db.(*redis.Client); ok {
