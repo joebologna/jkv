@@ -86,7 +86,7 @@ func (c *Client) Del(ctx context.Context, keys ...string) *jkv.IntCmd {
 // KEYS returns the scalar and hash keys
 func (c *Client) Keys(ctx context.Context, pattern string) *jkv.StringSliceCmd {
 	var files []string
-	for _, dir := range []string{c.ScalarDir(), c.HashDir()} {
+	for _, dir := range []string{c.HashDir(), c.ScalarDir()} {
 		entries, err := os.ReadDir(dir)
 		if err != nil {
 			if os.IsNotExist(err) {
@@ -137,17 +137,30 @@ func (c *Client) HSet(ctx context.Context, hash string, values ...string) *jkv.I
 		if rec.Err() != nil {
 			return jkv.NewIntCmd(0, rec.Err())
 		}
+
 		if rec.Val() > 0 {
 			return jkv.NewIntCmd(0, fmt.Errorf("key \"%s\" exists as a scalar, cannot be a hash", hash))
 		}
+
 		if err := os.MkdirAll(c.HashDir()+hash, 0775); err != nil {
 			return jkv.NewIntCmd(0, rec.Err())
 		}
-		key := values[0]
-		if err := os.WriteFile(c.HashDir()+hash+"/"+key, []byte(values[1]), 0664); err != nil {
-			return jkv.NewIntCmd(0, rec.Err())
+
+		n := 0
+		for i := 0; i < len(values); i++ {
+			key := values[i]
+			i++
+			f := c.HashDir() + hash + "/" + key
+			if _, err := os.Stat(f); err != nil {
+				if os.IsNotExist(err) {
+					n++
+					if err := os.WriteFile(c.HashDir()+hash+"/"+key, []byte(values[1]), 0664); err != nil {
+						return jkv.NewIntCmd(0, rec.Err())
+					}
+				}
+			}
 		}
-		return jkv.NewIntCmd(1, nil)
+		return jkv.NewIntCmd(int64(n), nil)
 	}
 	return jkv.NewIntCmd(0, notOpen())
 }

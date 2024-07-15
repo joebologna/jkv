@@ -162,22 +162,17 @@ func ProcessCmd(db interface{}, cmd string, opt_x, is_pipe bool) {
 					report("(integer)", fmt.Sprintf("%d", rec.Val()), is_pipe)
 				} else {
 					if len(tokens) >= 4 && ((len(tokens)-2)%2 == 0) {
-						hash := tokens[1]
-						var n int
-						for n = 0; n < (len(tokens)-1)/2; n++ {
-							key := tokens[2+n*2]
-							value = tokens[2+n*2+1]
-							if r, ok := db.(*redis.Client); ok {
-								err = r.HSet(ctx, hash, key, value).Err()
-							} else {
-								err = db.(*fs.Client).HSet(ctx, hash, key, value).Err()
-							}
-							if err != nil {
-								fmt.Println(err.Error())
-								return
-							}
+						var rec *jkv.IntCmd
+						if r, ok := db.(*redis.Client); ok {
+							rec = r.HSet(ctx, tokens[1], tokens[2:]...)
+						} else {
+							rec = db.(*fs.Client).HSet(ctx, tokens[1], tokens[2:]...)
 						}
-						report("(integer)", fmt.Sprintf("%d", n), is_pipe)
+						if rec.Err() != nil {
+							fmt.Println(rec.Err())
+						} else {
+							report("(integer)", fmt.Sprintf("%d", rec.Val()), is_pipe)
+						}
 					} else {
 						report("(error)", "ERR wrong number of arguments for 'hset' command", is_pipe)
 					}
@@ -334,7 +329,11 @@ func ProcessCmd(db interface{}, cmd string, opt_x, is_pipe bool) {
 				fmt.Println("(nil)")
 			} else {
 				for i, v := range rec.Val() {
-					fmt.Printf("%d) \"%s\"\n", i+1, v)
+					if is_pipe {
+						fmt.Println(v)
+					} else {
+						fmt.Printf("%d) \"%s\"\n", i+1, v)
+					}
 				}
 			}
 		} else {

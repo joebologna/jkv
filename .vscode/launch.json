@@ -11,13 +11,11 @@
             "mode": "auto",
             "program": "${fileDirname}",
             "args": [
-                "-r",
+                "-f",
                 "hset",
-                "hash1",
+                "hash",
                 "key1",
-                "one",
-                "key2",
-                "two"
+                "one"
             ]
         }
     ]
