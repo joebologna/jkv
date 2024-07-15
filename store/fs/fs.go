@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/fs"
 	"os"
 
 	"github.com/panduit-joeb/jkv"
@@ -154,24 +153,9 @@ func (c *Client) HSet(ctx context.Context, hash string, values ...string) *jkv.I
 }
 
 // Delete a hashed key by removing the file, if no keys exist after the operation remove the hash directory
-func (c *Client) HDel(ctx context.Context, hash, key string) *jkv.IntCmd {
-	var err error
-	var entries []fs.DirEntry
-
+func (c *Client) HDel(ctx context.Context, hash string, keys ...string) *jkv.IntCmd {
 	if c.IsOpen {
-		if err = os.Remove(c.HashDir() + hash + "/" + key); err != nil {
-			return jkv.NewIntCmd(0, err)
-		}
-		if entries, err = os.ReadDir(c.HashDir() + hash); err != nil {
-			return jkv.NewIntCmd(0, err)
-		}
-		if len(entries) == 0 {
-			err = os.RemoveAll(c.HashDir() + hash)
-			if err != nil {
-				return jkv.NewIntCmd(0, err)
-			}
-		}
-		return jkv.NewIntCmd(int64(len(entries)), err)
+		panic("not implemented")
 	}
 	return jkv.NewIntCmd(0, notOpen())
 }

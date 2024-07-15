@@ -74,7 +74,7 @@ type Client interface {
 	Exists(ctx context.Context, keys ...string) *IntCmd
 	HGet(ctx context.Context, hash, key string) *StringCmd
 	HSet(ctx context.Context, hash string, values ...string) *IntCmd
-	HDel(ctx context.Context, hash, key string) *IntCmd
+	HDel(ctx context.Context, hash string, values ...string) *IntCmd
 	HKeys(ctx context.Context, hash string) *StringSliceCmd
 	HExists(ctx context.Context, hash, key string) *BoolCmd
 	Ping(ctx context.Context) *StatusCmd

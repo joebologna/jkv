@@ -115,10 +115,10 @@ func (c *Client) HSet(ctx context.Context, hash string, values ...string) *jkv.I
 }
 
 // Delete a hashed key by removing the file, if no keys exist after the operation remove the hash directory
-func (c *Client) HDel(ctx context.Context, hash, key string) *jkv.IntCmd {
+func (c *Client) HDel(ctx context.Context, hash string, values ...string) *jkv.IntCmd {
 	var rec *real_redis.IntCmd
 	if c.IsOpen {
-		rec = c.RedisClient.HDel(ctx, hash, key)
+		rec = c.RedisClient.HDel(ctx, hash, values...)
 		return jkv.NewIntCmd(rec.Val(), rec.Err())
 	}
 	return jkv.NewIntCmd(0, notOpen())
