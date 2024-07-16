@@ -26,12 +26,16 @@ func main() {
 	flag.BoolVar(&redis_cmd, "r", cmd == "redis-cli", "Run JKV tests using Redis")
 	flag.BoolVar(&fs_cmd, "f", cmd == "jkv-cli", "Run JKV tests using FS")
 	flag.BoolVar(&version, "v", false, "Print version")
-	flag.BoolVar(&opt_x, "x", false, "Get value from stdin")
+	// flag.BoolVar(&opt_x, "x", false, "Get value from stdin")
 	flag.Parse()
 
 	if version {
 		fmt.Println(jkv.VERSION)
 		os.Exit(0)
+	}
+
+	if len(flag.Args()) == 4 && strings.ToUpper(flag.Args()[0]) == "HSET" && flag.Args()[1] == "-x" {
+		opt_x = true
 	}
 
 	prompt = len(flag.Args()) == 0
@@ -120,7 +124,7 @@ func ProcessCmd(db interface{}, cmd string, opt_x, is_pipe bool) {
 	case "HSET":
 		ctx := context.Background()
 		if opt_x {
-			if len(tokens) == 3 {
+			if len(tokens) == 4 {
 				var buf = make([]byte, 1024*1024)
 				var n = 0
 				n, err = os.Stdin.Read(buf)
@@ -130,13 +134,18 @@ func ProcessCmd(db interface{}, cmd string, opt_x, is_pipe bool) {
 					}
 					return
 				}
+				// buf = []byte("hello")
+
 				var rec *jkv.IntCmd
+				hash := tokens[2]
+				key := tokens[3]
+
 				if r, ok := db.(*redis.Client); ok {
-					rec = r.HSet(ctx, tokens[1], tokens[2], string(buf[:n-1]))
+					rec = r.HSet(ctx, hash, key, string(buf))
 				} else {
-					rec = db.(*fs.Client).HSet(ctx, tokens[1], tokens[2], string(buf[:n-1]))
+					rec = db.(*fs.Client).HSet(ctx, hash, key, string(buf))
 				}
-				report("(integer)", fmt.Sprintf("%d\n", rec.Val()), is_pipe)
+				report("(integer)", fmt.Sprintf("%d", rec.Val()), is_pipe)
 			} else {
 				report("(error)", "ERR wrong number of arguments for 'hset' command", is_pipe)
 			}

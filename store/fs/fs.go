@@ -149,16 +149,16 @@ func (c *Client) HSet(ctx context.Context, hash string, values ...string) *jkv.I
 		n := 0
 		for i := 0; i < len(values); i++ {
 			key := values[i]
-			i++
 			f := c.HashDir() + hash + "/" + key
-			if _, err := os.Stat(f); err != nil {
-				if os.IsNotExist(err) {
-					n++
-					if err := os.WriteFile(c.HashDir()+hash+"/"+key, []byte(values[1]), 0664); err != nil {
-						return jkv.NewIntCmd(0, rec.Err())
-					}
-				}
+			info, err := os.Stat(f)
+			if info == nil && os.IsNotExist(err) {
+				n++
 			}
+			if err := os.WriteFile(f, []byte(values[i+1]), 0664); err != nil {
+				fmt.Println("write file failed")
+				return jkv.NewIntCmd(0, rec.Err())
+			}
+			i++
 		}
 		return jkv.NewIntCmd(int64(n), nil)
 	}

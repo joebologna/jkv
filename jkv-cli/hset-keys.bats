@@ -92,5 +92,15 @@
 }
 
 @test "Test -x here" {
-    false
+    [ "$(jkv-cli -f flushdb)" = "OK" ]
+    [ "$(jkv-cli -f hset -x hash key1 <<<'one')" = "1" ]
+    [ "$(jkv-cli -f hset -x hash key2 <<<'two')" = "1" ]
+    [ "$(jkv-cli -f hset -x hash key3 <<<'three')" = "1" ]
+    [ "$(jkv-cli -f hset -x hash key3 <<<'three')" = "0" ]
+
+    [ "$(jkv-cli -r flushdb)" = "OK" ]
+    [ "$(jkv-cli -r hset -x hash key1 <<<'one')" = "1" ]
+    [ "$(jkv-cli -r hset -x hash key2 <<<'two')" = "1" ]
+    [ "$(jkv-cli -r hset -x hash key3 <<<'three')" = "1" ]
+    [ "$(jkv-cli -r hset -x hash key3 <<<'three')" = "0" ]
 }
