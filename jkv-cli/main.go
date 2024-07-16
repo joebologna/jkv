@@ -34,7 +34,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if len(flag.Args()) == 4 && strings.ToUpper(flag.Args()[0]) == "HSET" && flag.Args()[1] == "-x" {
+	if len(flag.Args()) > 1 && flag.Args()[1] == "-x" && ((len(flag.Args()) == 4 && strings.ToUpper(flag.Args()[0]) == "HSET") || (len(flag.Args()) == 3 && strings.ToUpper(flag.Args()[0]) == "SET")) {
 		opt_x = true
 	}
 
@@ -92,6 +92,8 @@ func ProcessCmd(db interface{}, cmd string, opt_x, is_pipe bool) {
 	}
 	ctx := context.Background()
 	switch strings.ToUpper(tokens[0]) {
+	case "PING":
+		fmt.Println("PONG")
 	case "FLUSHDB":
 		if len(tokens) == 1 {
 			if r, ok := db.(*redis.Client); ok {
@@ -267,7 +269,7 @@ func ProcessCmd(db interface{}, cmd string, opt_x, is_pipe bool) {
 		}
 	case "SET":
 		if opt_x {
-			if len(tokens) == 2 {
+			if len(tokens) == 3 {
 				ctx := context.Background()
 				var buf = make([]byte, 1024*1024)
 				var n = 0
@@ -278,11 +280,12 @@ func ProcessCmd(db interface{}, cmd string, opt_x, is_pipe bool) {
 					}
 					return
 				}
+				key := tokens[2]
 				var rec *jkv.StatusCmd
 				if r, ok := db.(*redis.Client); ok {
-					rec = r.Set(ctx, tokens[1], string(buf[:n-1]))
+					rec = r.Set(ctx, key, string(buf[:n-1]))
 				} else {
-					rec = db.(*fs.Client).Set(ctx, tokens[1], string(buf[:n-1]))
+					rec = db.(*fs.Client).Set(ctx, key, string(buf[:n-1]))
 				}
 				if rec.Err() != nil {
 					fmt.Println("(nil)")

@@ -122,3 +122,7 @@
     [ "$(redis-cli set -x key2 <<<'two')" = "OK" ]
     redis-cli keys '*'
 }
+
+@test "PING" {
+    [ "$(jkv-cli ping)" = "PONG" ]
+}
