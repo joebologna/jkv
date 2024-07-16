@@ -96,7 +96,7 @@ func TestScalar(t *testing.T) {
 		err := c.Open()
 		a.Nil(err)
 
-		rec := c.Set(ctx, "this", "that")
+		rec := c.Set(ctx, "this", "that", 0)
 		a.Nil(rec.Err())
 		a.Equal("OK", rec.Val())
 	})
@@ -118,7 +118,7 @@ func TestScalar(t *testing.T) {
 
 		key := "this"
 		value := "that"
-		rec := c.Set(ctx, key, value)
+		rec := c.Set(ctx, key, value, 0)
 		a.Nil(rec.Err())
 		a.Equal("OK", rec.Val())
 
@@ -142,7 +142,7 @@ func TestScalar(t *testing.T) {
 
 		key := "this"
 		value := "that"
-		rec := c.Set(ctx, key, value)
+		rec := c.Set(ctx, key, value, 0)
 		a.Nil(rec.Err())
 		a.Equal("OK", rec.Val())
 
@@ -166,7 +166,7 @@ func TestScalar(t *testing.T) {
 
 		key := "this"
 		value := "that"
-		rec := c.Set(ctx, key, value)
+		rec := c.Set(ctx, key, value, 0)
 		a.Nil(rec.Err())
 		a.Equal("OK", rec.Val())
 
@@ -190,7 +190,7 @@ func TestScalar(t *testing.T) {
 
 		key := "this"
 		value := "that"
-		rec := c.Set(ctx, key, value)
+		rec := c.Set(ctx, key, value, 0)
 		a.Nil(rec.Err())
 		a.Equal("OK", rec.Val())
 

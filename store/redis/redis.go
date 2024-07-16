@@ -3,6 +3,7 @@ package redis
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/panduit-joeb/jkv"
 
@@ -55,9 +56,9 @@ func (c *Client) Get(ctx context.Context, key string) *jkv.StringCmd {
 }
 
 // Set a scalar key to a value
-func (c *Client) Set(ctx context.Context, key, value string) *jkv.StatusCmd {
+func (c *Client) Set(ctx context.Context, key, value string, expiration time.Duration) *jkv.StatusCmd {
 	if c.IsOpen {
-		rec := c.RedisClient.Set(ctx, key, value, 0)
+		rec := c.RedisClient.Set(ctx, key, value, expiration)
 		return jkv.NewStatusCmd(rec.Val(), rec.Err())
 	}
 	return jkv.NewStatusCmd("", notOpen())

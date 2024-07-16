@@ -1,6 +1,9 @@
 package jkv
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 type baseCmd struct {
 	err error
@@ -68,7 +71,7 @@ type Client interface {
 	Close()
 	FlushDB(ctx context.Context) *StatusCmd
 	Get(ctx context.Context, key string) *StringCmd
-	Set(ctx context.Context, key, value string) *StatusCmd
+	Set(ctx context.Context, key, value string, expiration time.Duration) *StatusCmd
 	Del(ctx context.Context, keys ...string) *IntCmd
 	Keys(ctx context.Context, pattern string) *StringSliceCmd
 	Exists(ctx context.Context, keys ...string) *IntCmd

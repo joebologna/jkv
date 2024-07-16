@@ -279,9 +279,9 @@ func ProcessCmd(db interface{}, cmd string, opt_x, is_pipe bool) {
 				key := tokens[1]
 				var rec *jkv.StatusCmd
 				if r, ok := db.(*redis.Client); ok {
-					rec = r.Set(ctx, key, string(buf[:n-1]))
+					rec = r.Set(ctx, key, string(buf[:n-1]), 0)
 				} else {
-					rec = db.(*fs.Client).Set(ctx, key, string(buf[:n-1]))
+					rec = db.(*fs.Client).Set(ctx, key, string(buf[:n-1]), 0)
 				}
 				if rec.Err() != nil {
 					fmt.Println("(nil)")
@@ -296,9 +296,9 @@ func ProcessCmd(db interface{}, cmd string, opt_x, is_pipe bool) {
 				ctx := context.Background()
 				var rec *jkv.StatusCmd
 				if r, ok := db.(*redis.Client); ok {
-					rec = r.Set(ctx, tokens[1], tokens[2])
+					rec = r.Set(ctx, tokens[1], tokens[2], 0)
 				} else {
-					rec = db.(*fs.Client).Set(ctx, tokens[1], tokens[2])
+					rec = db.(*fs.Client).Set(ctx, tokens[1], tokens[2], 0)
 				}
 				fmt.Println(rec.Val())
 			} else {
