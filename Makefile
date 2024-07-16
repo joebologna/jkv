@@ -1,6 +1,6 @@
 .PHONY:
 
-all: set_version jkv-cli
+all: jkv-cli
 
 jkv-cli: .PHONY
 	cd jkv-cli; make clean all
