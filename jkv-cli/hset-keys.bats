@@ -93,33 +93,33 @@
 
 @test "Test -x here" {
     [ "$(jkv-cli -f flushdb)" = "OK" ]
-    [ "$(jkv-cli -f hset -x hash key1 <<<'one')" = "1" ]
-    [ "$(jkv-cli -f hset -x hash key2 <<<'two')" = "1" ]
-    [ "$(jkv-cli -f hset -x hash key3 <<<'three')" = "1" ]
-    [ "$(jkv-cli -f hset -x hash key3 <<<'three')" = "0" ]
+    [ "$(printf one | jkv-cli -f -x hset hash key1)" = "1" ]
+    [ "$(printf two | jkv-cli -f -x hset hash key2)" = "1" ]
+    [ "$(printf three | jkv-cli -f -x hset hash key3)" = "1" ]
+    [ "$(printf three | jkv-cli -f -x hset hash key3)" = "0" ]
 
     [ "$(jkv-cli -r flushdb)" = "OK" ]
-    [ "$(jkv-cli -r hset -x hash key1 <<<'one')" = "1" ]
-    [ "$(jkv-cli -r hset -x hash key2 <<<'two')" = "1" ]
-    [ "$(jkv-cli -r hset -x hash key3 <<<'three')" = "1" ]
-    [ "$(jkv-cli -r hset -x hash key3 <<<'three')" = "0" ]
+    [ "$(printf one | jkv-cli -r -x hset hash key1)" = "1" ]
+    [ "$(printf two | jkv-cli -r -x hset hash key2)" = "1" ]
+    [ "$(printf three | jkv-cli -r -x hset hash key3)" = "1" ]
+    [ "$(printf three | jkv-cli -r -x hset hash key3)" = "0" ]
 
     [ "$(jkv-cli -f flushdb)" = "OK" ]
-    [ "$(jkv-cli -f set -x key1 <<<'one')" = "OK" ]
-    [ "$(jkv-cli -f set -x key2 <<<'two')" = "OK" ]
-    [ "$(jkv-cli -f set -x key2 <<<'two')" = "OK" ]
+    [ "$(printf one | jkv-cli -f -x set key1)" = "OK" ]
+    [ "$(printf two | jkv-cli -f -x set key2)" = "OK" ]
+    [ "$(printf two | jkv-cli -f -x set key2)" = "OK" ]
     jkv-cli -f keys '*'
 
     [ "$(jkv-cli -r flushdb)" = "OK" ]
-    [ "$(jkv-cli -r set -x key1 <<<'one')" = "OK" ]
-    [ "$(jkv-cli -r set -x key2 <<<'two')" = "OK" ]
-    [ "$(jkv-cli -r set -x key2 <<<'two')" = "OK" ]
+    [ "$(printf one | jkv-cli -r -x set key1)" = "OK" ]
+    [ "$(printf two | jkv-cli -r -x set key2)" = "OK" ]
+    [ "$(printf two | jkv-cli -r -x set key2)" = "OK" ]
     jkv-cli -f keys '*'
 
     [ "$(redis-cli flushdb)" = "OK" ]
-    [ "$(redis-cli set -x key1 <<<'one')" = "OK" ]
-    [ "$(redis-cli set -x key2 <<<'two')" = "OK" ]
-    [ "$(redis-cli set -x key2 <<<'two')" = "OK" ]
+    [ "$(printf one | redis-cli -x set key1)" = "OK" ]
+    [ "$(printf two | redis-cli -x set key2)" = "OK" ]
+    [ "$(printf two | redis-cli -x set key2)" = "OK" ]
     redis-cli keys '*'
 }
 
