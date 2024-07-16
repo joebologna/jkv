@@ -208,7 +208,11 @@ func ProcessCmd(db interface{}, cmd string, opt_x, is_pipe bool) {
 				fmt.Println("(nil)")
 			} else {
 				for i, v := range values {
-					fmt.Printf("%d) \"%s\"\n", i+1, v)
+					if is_pipe {
+						fmt.Println(v)
+					} else {
+						fmt.Printf("%d) \"%s\"\n", i+1, v)
+					}
 				}
 			}
 		} else {
