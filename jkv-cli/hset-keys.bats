@@ -103,4 +103,22 @@
     [ "$(jkv-cli -r hset -x hash key2 <<<'two')" = "1" ]
     [ "$(jkv-cli -r hset -x hash key3 <<<'three')" = "1" ]
     [ "$(jkv-cli -r hset -x hash key3 <<<'three')" = "0" ]
+
+    [ "$(jkv-cli -f flushdb)" = "OK" ]
+    [ "$(jkv-cli -f set -x key1 <<<'one')" = "OK" ]
+    [ "$(jkv-cli -f set -x key2 <<<'two')" = "OK" ]
+    [ "$(jkv-cli -f set -x key2 <<<'two')" = "OK" ]
+    jkv-cli -f keys '*'
+
+    [ "$(jkv-cli -r flushdb)" = "OK" ]
+    [ "$(jkv-cli -r set -x key1 <<<'one')" = "OK" ]
+    [ "$(jkv-cli -r set -x key2 <<<'two')" = "OK" ]
+    [ "$(jkv-cli -r set -x key2 <<<'two')" = "OK" ]
+    jkv-cli -f keys '*'
+
+    [ "$(redis-cli flushdb)" = "OK" ]
+    [ "$(redis-cli set -x key1 <<<'one')" = "OK" ]
+    [ "$(redis-cli set -x key2 <<<'two')" = "OK" ]
+    [ "$(redis-cli set -x key2 <<<'two')" = "OK" ]
+    redis-cli keys '*'
 }
