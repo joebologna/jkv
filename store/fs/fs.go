@@ -22,7 +22,14 @@ type Client struct {
 
 var _ jkv.Client = (*Client)(nil)
 
-const DEFAULT_DB = "jkv_db"
+var DEFAULT_DB = GetDBDir()
+
+func GetDBDir() (dir string) {
+	if dir = os.Getenv("HOME"); dir == "" {
+		dir = "/tmp"
+	}
+	return dir + "/jkv_db"
+}
 
 func (j *Client) ScalarDir() string { return j.DBDir + "/scalars/" }
 func (j *Client) HashDir() string   { return j.DBDir + "/hashes/" }

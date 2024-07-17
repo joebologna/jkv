@@ -23,10 +23,13 @@ func main() {
 	// fmt.Println("cmd is", cmd)
 
 	var redis_cmd, fs_cmd, version, opt_x, prompt bool
+	var redis_host, db_dir string
 	flag.BoolVar(&redis_cmd, "r", cmd == "redis-cli", "Run JKV tests using Redis")
 	flag.BoolVar(&fs_cmd, "f", cmd == "jkv-cli", "Run JKV tests using FS")
 	flag.BoolVar(&version, "v", false, "Print version")
 	flag.BoolVar(&opt_x, "x", false, "Get value from stdin")
+	flag.StringVar(&redis_host, "h", redis.DEFAULT_DB, "Redis server host and port")
+	flag.StringVar(&db_dir, "d", fs.DEFAULT_DB, "Location of FS DB")
 	flag.Parse()
 
 	if version {
@@ -37,7 +40,7 @@ func main() {
 	prompt = len(flag.Args()) == 0
 
 	if redis_cmd {
-		r := redis.NewClient(&redis.Options{Addr: "localhost:6379", Password: "", DB: 0})
+		r := redis.NewClient(&redis.Options{Addr: redis_host, Password: "", DB: 0})
 		r.Open()
 
 		if prompt {
@@ -56,7 +59,7 @@ func main() {
 			ProcessCmd(r, strings.Join(flag.Args(), " "), opt_x, isPipe())
 		}
 	} else if fs_cmd {
-		f := fs.NewClient(&fs.Options{Addr: fs.DEFAULT_DB})
+		f := fs.NewClient(&fs.Options{Addr: db_dir})
 		f.Open()
 
 		if prompt {

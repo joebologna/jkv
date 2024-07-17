@@ -126,3 +126,19 @@
 @test "PING" {
     [ "$(jkv-cli ping)" = "PONG" ]
 }
+
+@test "DB Location" {
+    [ "$(jkv-cli flushdb)" = "OK" ]
+    [ ! -d "${HOME}/jkv_db" ]
+    [ "$(jkv-cli set key1 one)" = "OK" ]
+    [ -d "${HOME}/jkv_db" ]
+    jkv-cli flushdb
+
+    [ "$(jkv-cli -d "${HOME}/db" flushdb)" = "OK" ]
+    [ ! -d "${HOME}/db" ]
+
+    [ "$(jkv-cli -d "${HOME}/db" set key1 one)" = "OK" ]
+    [ -d "${HOME}/db" ]
+
+    jkv-cli -d "${HOME}/db" flushdb
+}
