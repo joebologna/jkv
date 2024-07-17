@@ -7,6 +7,8 @@ import (
 
 	_ "embed"
 
+	"github.com/panduit-joeb/jkv/store/apk"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/canvas"
@@ -37,35 +39,40 @@ func main() {
 		label.Refresh()
 		c.Refresh(c.Content())
 		var (
-			user_dir, db_dir, file_name string
-			dir, file                   fyne.URI
-			writer                      fyne.URIWriteCloser
-			err                         error
+			user_dir, db_dir string
 		)
 		user_dir = os.TempDir()
-		db_dir = user_dir + "/jkv_db"
-		dir = storage.NewFileURI(db_dir)
-		if err = storage.CreateListable(dir); err != nil {
-			fmt.Println("creating directory", dir, "failed", err.Error())
+		db_dir = user_dir + "/jkv_db/scalars"
+		if err := apk.MkdirAll(db_dir, 0775); err == nil {
+			fmt.Printf("MkdirAll(\"%s\") worked\n", db_dir)
 		} else {
-			fmt.Println("creating directory", dir, "worked")
+			fmt.Printf("MkdirAll(\"%s\") failed, err: %s\n", db_dir, err.Error())
 		}
-		file_name = db_dir + "/file"
-		file = storage.NewFileURI(file_name)
-		writer, err = storage.Writer(file)
-		if err != nil {
-			fmt.Println("creating writer for", file, "failed", err.Error())
-		} else {
-			fmt.Println("creating writer for", file, "worked")
-		}
-		var n int
-		if n, err = writer.Write([]byte("hello world")); err != nil {
-			fmt.Println("write failed", err.Error())
-		} else {
-			fmt.Println("wrote", n, "bytes to", file)
-		}
-		writer.Close()
 	}()
 
 	w.ShowAndRun()
+}
+
+func TestStorage(dir fyne.URI, db_dir string, err error, file_name string, file fyne.URI, writer fyne.URIWriteCloser) {
+	dir = storage.NewFileURI(db_dir)
+	if err = storage.CreateListable(dir); err != nil {
+		fmt.Println("creating directory", dir, "failed", err.Error())
+	} else {
+		fmt.Println("creating directory", dir, "worked")
+	}
+	file_name = db_dir + "/file"
+	file = storage.NewFileURI(file_name)
+	writer, err = storage.Writer(file)
+	if err != nil {
+		fmt.Println("creating writer for", file, "failed", err.Error())
+	} else {
+		fmt.Println("creating writer for", file, "worked")
+	}
+	var n int
+	if n, err = writer.Write([]byte("hello world")); err != nil {
+		fmt.Println("write failed", err.Error())
+	} else {
+		fmt.Println("wrote", n, "bytes to", file)
+	}
+	writer.Close()
 }

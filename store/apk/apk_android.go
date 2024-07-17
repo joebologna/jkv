@@ -1,4 +1,4 @@
-package fs
+package apk
 
 import (
 	"context"
@@ -25,10 +25,7 @@ var _ jkv.Client = (*Client)(nil)
 var DEFAULT_DB = GetDBDir()
 
 func GetDBDir() (dir string) {
-	if dir = os.Getenv("HOME"); dir == "" {
-		dir = "/tmp"
-	}
-	return dir + "/jkv_db"
+	return os.TempDir() + "/jkv_db"
 }
 
 func (j *Client) ScalarDir() string { return j.DBDir + "/scalars/" }
