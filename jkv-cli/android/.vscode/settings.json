@@ -1,0 +1,27 @@
+{
+    "cSpell.words": [
+        "backupdb",
+        "dbutil",
+        "FLUSHDB",
+        "HDEL",
+        "HEXISTS",
+        "HGET",
+        "hkey",
+        "HKEYS",
+        "HSET",
+        "initdb",
+        "mgmt",
+        "panduit",
+        "rdbrip",
+        "stretchr",
+        "Upsert",
+        "WRONGTYPE"
+    ],
+    "go.toolsEnvVars": {
+        // "GOOS": "linux",
+        // "GOARCH": "arm",
+        // "GOARM": "7",
+        // "CGO_ENABLED": "0"
+        "GOOS": "android"
+    }
+}
