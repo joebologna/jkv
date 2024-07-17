@@ -26,7 +26,7 @@ var DEFAULT_DB = GetDBDir()
 
 func GetDBDir() (dir string) {
 	if dir = os.Getenv("HOME"); dir == "" {
-		dir = "/tmp"
+		dir = "."
 	}
 	return dir + "/jkv_db"
 }
