@@ -1,7 +1,6 @@
 package apk
 
 import (
-	"fmt"
 	"os"
 	"time"
 
@@ -48,17 +47,11 @@ func MkdirAll(name string, mode FileMode) (err error) {
 		//implies file exists, abort
 		return os.ErrExist
 	}
-	fmt.Println("File", name, "does not exist, continuing")
 	// this is tricky because the top level directory is unknown, for now this method is always called with 2 levels, i.e. jkv_db/hashes or jkv_db/scalars, so we just need to make the jkv_db directory, then the full directory
 	u := storage.NewFileURI(name)
 	if baseDir, err := storage.Parent(u); err == nil {
-		fmt.Println("found parent", baseDir)
-		if err = storage.CreateListable(baseDir); err == nil {
-			err = storage.CreateListable(u)
-			return err
-		} else {
-			return err
-		}
+		storage.CreateListable(baseDir)
+		return storage.CreateListable(u)
 	}
 	return err
 }

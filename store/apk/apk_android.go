@@ -54,6 +54,8 @@ func (j *Client) Close() { j.IsOpen = false }
 // FLUSHDB a database by removing the j.dbDir and everything underneath, ignore errors for now
 func (j *Client) FlushDB(ctx context.Context) *jkv.StatusCmd {
 	os.RemoveAll(j.DBDir)
+	// need to recreate the dircectory structure
+	j.Open()
 	return jkv.NewStatusCmd("OK", nil)
 }
 
