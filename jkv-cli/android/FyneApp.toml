@@ -1,0 +1,8 @@
+Website = "https://atlona.com"
+
+[Details]
+  Icon = "Icon.png"
+  Name = "jkv"
+  ID = "com.atlona.touchos.jkv"
+  Version = "1.0.0"
+  Build = 33
