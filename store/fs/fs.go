@@ -27,7 +27,7 @@ var DEFAULT_DB = GetDBDir()
 
 func GetDBDir() (dir string) {
 	if runtime.GOOS == "android" {
-		return "/storage/emulated/0"
+		return "/storage/emulated/0/jkv_db"
 	}
 	if dir = os.Getenv("HOME"); dir == "" {
 		dir = "."
