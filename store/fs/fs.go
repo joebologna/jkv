@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/panduit-joeb/jkv"
@@ -25,6 +26,9 @@ var _ jkv.Client = (*Client)(nil)
 var DEFAULT_DB = GetDBDir()
 
 func GetDBDir() (dir string) {
+	if runtime.GOOS == "android" {
+		return "/storage/emulated/0"
+	}
 	if dir = os.Getenv("HOME"); dir == "" {
 		dir = "."
 	}
