@@ -25,7 +25,7 @@ $(BINARY)-gui: getdb
 	cd android; go build -o $@ .
 
 getdb:
-	cd android; unzip $(HOME)/TouchOS/tpgui/asset-mgmt/jkv_db.zip -d android
+	cd android; unzip -o $(HOME)/TouchOS/tpgui/asset-mgmt/jkv_db.zip
 
 logcat: .PHONY
 	adb logcat Fyne '*:S'
