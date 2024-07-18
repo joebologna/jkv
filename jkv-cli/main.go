@@ -186,17 +186,18 @@ func ProcessCmd(db interface{}, cmd string, opt_x, is_pipe bool) {
 			}
 		}
 	case "HDEL":
-		if len(tokens) == 2 {
+		if len(tokens) == 3 {
 			ctx := context.Background()
+			var rec *jkv.IntCmd
 			if r, ok := db.(*redis.Client); ok {
-				err = r.HDel(ctx, tokens[1], tokens[2]).Err()
+				rec = r.HDel(ctx, tokens[1], tokens[2])
 			} else {
-				err = db.(*fs.Client).HDel(ctx, tokens[1], tokens[2]).Err()
+				rec = db.(*fs.Client).HDel(ctx, tokens[1], tokens[2])
 			}
-			if err != nil {
+			if rec.Err() != nil {
 				fmt.Println("(nil)")
 			} else {
-				fmt.Printf("\"%s\"\n", value)
+				report("(integer)", fmt.Sprintf("%d", rec.Val()), is_pipe)
 			}
 		} else {
 			fmt.Println("(nil)")
@@ -215,8 +216,15 @@ func ProcessCmd(db interface{}, cmd string, opt_x, is_pipe bool) {
 			values = rec.Val()
 			err = rec.Err()
 			if err != nil {
-				fmt.Println("(nil)")
+				if os.IsNotExist(err) {
+					report("(empty array)", "", is_pipe)
+				} else {
+					fmt.Println("(nil)")
+				}
 			} else {
+				if len(values) == 0 {
+					report("(empty array)", "", is_pipe)
+				}
 				for i, v := range values {
 					if is_pipe {
 						fmt.Println(v)
@@ -337,11 +345,15 @@ func ProcessCmd(db interface{}, cmd string, opt_x, is_pipe bool) {
 			if rec.Err() != nil {
 				fmt.Println("(nil)")
 			} else {
-				for i, v := range rec.Val() {
-					if is_pipe {
-						fmt.Println(v)
-					} else {
-						fmt.Printf("%d) \"%s\"\n", i+1, v)
+				if len(rec.Val()) == 0 {
+					report("(empty array)", "", is_pipe)
+				} else {
+					for i, v := range rec.Val() {
+						if is_pipe {
+							fmt.Println(v)
+						} else {
+							fmt.Printf("%d) \"%s\"\n", i+1, v)
+						}
 					}
 				}
 			}

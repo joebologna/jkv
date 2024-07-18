@@ -53,8 +53,8 @@ func (j *Client) Close() { j.IsOpen = false }
 
 // FLUSHDB a database by removing the j.dbDir and everything underneath, ignore errors for now
 func (j *Client) FlushDB(ctx context.Context) *jkv.StatusCmd {
-	os.RemoveAll(j.DBDir)
-	// need to recreate the dircectory structure
+	RemoveAll(j.DBDir)
+	// need to recreate the directory structure
 	j.Open()
 	return jkv.NewStatusCmd("OK", nil)
 }
@@ -62,7 +62,7 @@ func (j *Client) FlushDB(ctx context.Context) *jkv.StatusCmd {
 // Return data in scalar key data, error is file is missing or inaccessible
 func (c *Client) Get(ctx context.Context, key string) *jkv.StringCmd {
 	if c.IsOpen {
-		data, err := os.ReadFile(c.ScalarDir() + key)
+		data, err := ReadFile(c.ScalarDir() + key)
 		return jkv.NewStringCmd(string(data), err)
 	}
 	return jkv.NewStringCmd("", notOpen())
@@ -81,7 +81,7 @@ func (c *Client) Del(ctx context.Context, keys ...string) *jkv.IntCmd {
 	if c.IsOpen {
 		n := 0
 		for _, key := range keys {
-			if os.Remove(c.ScalarDir()+key) == nil {
+			if Remove(c.ScalarDir()+key) == nil {
 				n++
 			}
 		}
@@ -94,7 +94,7 @@ func (c *Client) Del(ctx context.Context, keys ...string) *jkv.IntCmd {
 func (c *Client) Keys(ctx context.Context, pattern string) *jkv.StringSliceCmd {
 	var files []string
 	for _, dir := range []string{c.HashDir(), c.ScalarDir()} {
-		entries, err := os.ReadDir(dir)
+		entries, err := ReadDir(dir)
 		if err != nil {
 			if os.IsNotExist(err) {
 				return jkv.NewStringSliceCmd([]string{}, nil)
@@ -112,7 +112,7 @@ func (c *Client) Keys(ctx context.Context, pattern string) *jkv.StringSliceCmd {
 func (c *Client) Exists(ctx context.Context, keys ...string) *jkv.IntCmd {
 	if c.IsOpen {
 		// todo: add a loop here
-		if _, err := os.Stat(c.ScalarDir() + keys[0]); err != nil {
+		if _, err := Stat(c.ScalarDir() + keys[0]); err != nil {
 			if os.IsNotExist(err) {
 				return jkv.NewIntCmd(int64(0), nil)
 			}
@@ -127,7 +127,7 @@ func (c *Client) Exists(ctx context.Context, keys ...string) *jkv.IntCmd {
 // Return data in hashed key data, error is file is missing or inaccessible
 func (c *Client) HGet(ctx context.Context, hash, key string) *jkv.StringCmd {
 	if c.IsOpen {
-		data, err := os.ReadFile(c.HashDir() + hash + "/" + key)
+		data, err := ReadFile(c.HashDir() + hash + "/" + key)
 		if err != nil {
 			return jkv.NewStringCmd("", err)
 		}
@@ -157,11 +157,11 @@ func (c *Client) HSet(ctx context.Context, hash string, values ...string) *jkv.I
 		for i := 0; i < len(values); i++ {
 			key := values[i]
 			f := c.HashDir() + hash + "/" + key
-			info, err := os.Stat(f)
+			info, err := Stat(f)
 			if info == nil && os.IsNotExist(err) {
 				n++
 			}
-			if err := os.WriteFile(f, []byte(values[i+1]), 0664); err != nil {
+			if err := WriteFile(f, []byte(values[i+1]), 0664); err != nil {
 				fmt.Println("write file failed")
 				return jkv.NewIntCmd(0, rec.Err())
 			}

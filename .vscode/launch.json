@@ -12,12 +12,9 @@
             "program": "${fileDirname}",
             "args": [
                 "-f",
-                "hset",
-                "hash",
-                "-x",
-                "key1",
+                "hkeys",
+                "hash"
             ]
         }
     ]
 }
-//-f hset hash1 key1 one key2 two

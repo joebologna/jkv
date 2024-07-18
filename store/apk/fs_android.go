@@ -36,7 +36,7 @@ type FSOp interface {
 	RemoveAll(string) error
 	Rmdir(string) error
 	ReadFile(string) ([]byte, error)
-	WriteFile(string, []byte, FileMode) (int, error)
+	WriteFile(string, []byte, FileMode) error
 	Remove(string) error
 	ReadDir(string) ([]DirEntry, error)
 	Stat(string) (FileInfo, error)
@@ -87,12 +87,12 @@ func ReadFile(name string) (data []byte, err error) {
 	return []byte{}, err
 }
 
-func WriteFile(name string, data []byte, mode FileMode) (n int, err error) {
+func WriteFile(name string, data []byte, mode FileMode) (err error) {
 	w, err := storage.Writer(storage.NewFileURI(name))
 	if err == nil {
-		return w.Write(data)
+		return func() (err error) { _, err = w.Write(data); return err }()
 	}
-	return 0, nil
+	return nil
 }
 
 func Remove(name string) error { return storage.Delete(storage.NewFileURI(name)) }
