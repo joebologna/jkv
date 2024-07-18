@@ -31,8 +31,8 @@ func GetDBDir() (dir string) {
 	return dir + "/jkv_db"
 }
 
-func (j *Client) ScalarDir() string { return j.DBDir + "/scalars/" }
-func (j *Client) HashDir() string   { return j.DBDir + "/hashes/" }
+func (c *Client) ScalarDir() string { return c.DBDir + "/scalars/" }
+func (c *Client) HashDir() string   { return c.DBDir + "/hashes/" }
 func notOpen() error                { return errors.New("DB is not open") }
 
 func NewClient(opts *Options) (db *Client) {
@@ -40,19 +40,19 @@ func NewClient(opts *Options) (db *Client) {
 }
 
 // Open a database by creating the directories required if they don't exist and mark the database open
-func (j *Client) Open() error {
-	j.IsOpen = false
-	for _, dir := range []string{j.ScalarDir(), j.HashDir()} {
+func (c *Client) Open() error {
+	c.IsOpen = false
+	for _, dir := range []string{c.ScalarDir(), c.HashDir()} {
 		if err := os.MkdirAll(dir, 0775); err != nil {
 			return err
 		}
 	}
-	j.IsOpen = true
+	c.IsOpen = true
 	return nil
 }
 
 // Close a database, basically just mark it closed
-func (j *Client) Close() { j.IsOpen = false }
+func (c *Client) Close() { c.IsOpen = false }
 
 // FLUSHDB a database by removing the j.dbDir and everything underneath, ignore errors for now
 func (j *Client) FlushDB(ctx context.Context) *jkv.StatusCmd {

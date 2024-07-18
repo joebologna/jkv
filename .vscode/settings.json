@@ -21,7 +21,7 @@
         // "GOOS": "linux",
         // "GOARCH": "arm",
         // "GOARM": "7",
-        // "CGO_ENABLED": "0"
+        "CGO_ENABLED": "1",
         "GOOS": "android"
     }
 }

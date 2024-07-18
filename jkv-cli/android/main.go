@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image/color"
 	"os"
+	"strings"
 
 	_ "embed"
 
@@ -48,9 +49,40 @@ func main() {
 		logString("get key1", f.Get(ctx, "key1"))
 		logInt("del key1", f.Del(ctx, "key1"))
 		f.Close()
+		msg := widget.NewLabel("")
+		output := widget.NewMultiLineEntry()
+		input := widget.NewEntry()
+		input.SetPlaceHolder("flushdb")
+		content := container.NewVBox(input, widget.NewButton("Go", func() {
+			msg.SetText(fmt.Sprintf("executing \"%s\"", input.Text))
+			switch strings.ToLower(input.Text) {
+			case "flushdb":
+				rc := f.FlushDB(ctx)
+				output.SetText(fmt.Sprintf("%s\n%s", e(rc.Err()), rc.Val()))
+			case "set":
+				rc := f.Set(ctx, "key1", "one", 0)
+				output.SetText(fmt.Sprintf("%s\n%s", e(rc.Err()), rc.Val()))
+			case "get":
+				rc := f.Get(ctx, "key1")
+				output.SetText(fmt.Sprintf("%s\n%s", e(rc.Err()), rc.Val()))
+			case "del":
+				rc := f.Del(ctx, "key1")
+				output.SetText(fmt.Sprintf("%s\n%d", e(rc.Err()), rc.Val()))
+			default:
+				output.SetText("Invalid Command")
+			}
+		}), msg, output)
+		c.SetContent(content)
 	}()
 
 	w.ShowAndRun()
+}
+
+func e(err error) string {
+	if err == nil {
+		return "(nil)"
+	}
+	return err.Error()
 }
 
 func logStatus(msg string, rc *jkv.StatusCmd) {
