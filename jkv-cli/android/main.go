@@ -55,21 +55,55 @@ func main() {
 		input.SetPlaceHolder("flushdb")
 		content := container.NewVBox(input, widget.NewButton("Go", func() {
 			msg.SetText(fmt.Sprintf("executing \"%s\"", input.Text))
-			switch strings.ToLower(input.Text) {
-			case "flushdb":
-				rc := f.FlushDB(ctx)
-				output.SetText(fmt.Sprintf("%s\n%s", e(rc.Err()), rc.Val()))
-			case "set":
-				rc := f.Set(ctx, "key1", "one", 0)
-				output.SetText(fmt.Sprintf("%s\n%s", e(rc.Err()), rc.Val()))
-			case "get":
-				rc := f.Get(ctx, "key1")
-				output.SetText(fmt.Sprintf("%s\n%s", e(rc.Err()), rc.Val()))
-			case "del":
-				rc := f.Del(ctx, "key1")
-				output.SetText(fmt.Sprintf("%s\n%d", e(rc.Err()), rc.Val()))
-			default:
-				output.SetText("Invalid Command")
+			tokens := strings.Fields(input.Text)
+			if len(tokens) > 0 {
+				switch strings.ToLower(tokens[0]) {
+				case "flushdb":
+					rc := f.FlushDB(ctx)
+					output.SetText(fmt.Sprintf("%s\n%s", e(rc.Err()), rc.Val()))
+				case "set":
+					if len(tokens) == 3 {
+						rc := f.Set(ctx, tokens[1], tokens[2], 0)
+						output.SetText(fmt.Sprintf("%s\n%s", e(rc.Err()), rc.Val()))
+					}
+				case "get":
+					if len(tokens) == 2 {
+						rc := f.Get(ctx, tokens[1])
+						output.SetText(fmt.Sprintf("%s\n%s", e(rc.Err()), rc.Val()))
+					}
+				case "del":
+					if len(tokens) == 2 {
+						rc := f.Del(ctx, tokens[1])
+						output.SetText(fmt.Sprintf("%s\n%d", e(rc.Err()), rc.Val()))
+					}
+				case "keys":
+					if len(tokens) == 2 {
+						rc := f.Keys(ctx, tokens[1])
+						output.SetText(fmt.Sprintf("%s\n%s", e(rc.Err()), strings.Join(rc.Val(), "\n")))
+					}
+				case "hset":
+					if len(tokens) == 4 {
+						rc := f.HSet(ctx, tokens[1], tokens[2], tokens[3])
+						output.SetText(fmt.Sprintf("%s\n%s", e(rc.Err()), rc.Val()))
+					}
+				case "hget":
+					if len(tokens) == 3 {
+						rc := f.HGet(ctx, tokens[1], tokens[2])
+						output.SetText(fmt.Sprintf("%s\n%s", e(rc.Err()), rc.Val()))
+					}
+				case "hdel":
+					if len(tokens) == 3 {
+						rc := f.HDel(ctx, tokens[1], tokens[2])
+						output.SetText(fmt.Sprintf("%s\n%d", e(rc.Err()), rc.Val()))
+					}
+				case "hkeys":
+					if len(tokens) == 2 {
+						rc := f.HKeys(ctx, tokens[1])
+						output.SetText(fmt.Sprintf("%s\n%s", e(rc.Err()), strings.Join(rc.Val(), "\n")))
+					}
+				default:
+					output.SetText("Invalid Command")
+				}
 			}
 		}), msg, output)
 		c.SetContent(content)
