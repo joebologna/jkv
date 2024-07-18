@@ -21,8 +21,11 @@ install-apk:
 	cd android; adb install $(BINARY).apk
 	adb shell monkey -p com.atlona.touchos.$(BINARY) -c android.intent.category.LAUNCHER 1
 
-$(BINARY)-gui:
+$(BINARY)-gui: getdb
 	cd android; go build -o $@ .
+
+getdb:
+	cd android; unzip $(HOME)/TouchOS/tpgui/asset-mgmt/jkv_db.zip -d android
 
 logcat: .PHONY
 	adb logcat Fyne '*:S'
