@@ -38,17 +38,29 @@ func NewClient(opts *Options) (db *Client) {
 
 // Open a database by creating the directories required if they don't exist and mark the database open
 func (j *Client) Open() error {
-	j.IsOpen = false
-	for _, dir := range []string{j.ScalarDir(), j.HashDir()} {
-		if err := MkdirAll(dir, 0775); err != nil {
-			if os.IsExist(err) {
-				fmt.Printf("%s exists, ignoring\n", dir)
+	if !j.IsOpen {
+		for _, dir := range []string{j.ScalarDir(), j.HashDir()} {
+			// var fi FileInfo
+			var err error
+			if _, err = Stat(dir); err == nil {
+				fmt.Println(dir, "exists good")
+				continue
+			}
+			// fmt.Printf("Stat returns %#v, err: %#v, trying MkdirAll\n", fi, err)
+			if err := MkdirAll(dir, 0775); err != nil {
+				if os.IsExist(err) {
+					fmt.Printf("%s exists, ignoring\n", dir)
+				} else {
+					fmt.Printf("MkdirAll %s failed, err = %s, ignoring\n", dir, err.Error())
+				}
 			} else {
-				fmt.Printf("MkdirAll %s failed, err = %s, ignoring\n", dir, err.Error())
+				fmt.Printf("MkdirAll(%s) - success\n", dir)
 			}
 		}
+		j.IsOpen = true
+	} else {
+		fmt.Println("db is already opened")
 	}
-	j.IsOpen = true
 	return nil
 }
 
@@ -75,7 +87,7 @@ func (c *Client) Get(ctx context.Context, key string) *jkv.StringCmd {
 // Set a scalar key to a value
 func (c *Client) Set(ctx context.Context, key, value string, expiration time.Duration) *jkv.StatusCmd {
 	if c.IsOpen {
-		return jkv.NewStatusCmd("OK", os.WriteFile(c.DBDir+"/scalars/"+key, []byte(value), 0660))
+		return jkv.NewStatusCmd("OK", WriteFile(c.DBDir+"/scalars/"+key, []byte(value), 0660))
 	}
 	return jkv.NewStatusCmd("(nil)", notOpen())
 }
@@ -131,10 +143,13 @@ func (c *Client) Exists(ctx context.Context, keys ...string) *jkv.IntCmd {
 // Return data in hashed key data, error is file is missing or inaccessible
 func (c *Client) HGet(ctx context.Context, hash, key string) *jkv.StringCmd {
 	if c.IsOpen {
-		data, err := ReadFile(c.HashDir() + hash + "/" + key)
+		f := c.HashDir() + hash + "/" + key
+		data, err := ReadFile(f)
 		if err != nil {
+			fmt.Println("reading", f, "failed, err:", err.Error())
 			return jkv.NewStringCmd("", err)
 		}
+		fmt.Println("reading", f, "succeeded, data:", string(data))
 		return jkv.NewStringCmd(string(data), nil)
 	}
 	return jkv.NewStringCmd("", notOpen())
@@ -144,41 +159,23 @@ func (c *Client) HGet(ctx context.Context, hash, key string) *jkv.StringCmd {
 // todo: reject a hash if a scalar key exists
 func (c *Client) HSet(ctx context.Context, hash string, values ...string) *jkv.IntCmd {
 	if c.IsOpen {
+		n := int64(0)
 		rec := c.Exists(ctx, hash)
-		if rec.Err() != nil {
-			// return jkv.NewIntCmd(0, errors.New("c.Exists() "+rec.Err().Error()))
-			fmt.Println("c.Exists(), ignoring (fix me), err:", rec.Err())
+		if rec.Err() == nil && rec.Val() == 1 {
+			return jkv.NewIntCmd(0, errors.New("scalar exists, this is bad"))
 		}
-
-		if rec.Val() > 0 {
-			// return jkv.NewIntCmd(0, fmt.Errorf("key \"%s\" exists as a scalar, cannot be a hash", hash))
-			fmt.Printf("key \"%s\" exists as a scalar, cannot be a hash, ignoring (fix me)\n", hash)
+		// todo: add loop here
+		f := c.HashDir() + hash + "/" + values[0]
+		err := WriteFile(f, []byte(values[1]), 0644)
+		if err == nil {
+			n++
+			fmt.Printf("WriteFile(%s, %s), succeeded.\n", f, values[1])
+		} else {
+			fmt.Printf("WriteFile(%s, %s), failed. err: %#v\n", f, values[1], err)
 		}
-
-		if err := MkdirAll(c.HashDir()+hash, 0775); err != nil {
-			// return jkv.NewIntCmd(0, errors.New("MkdirAll() failed "+err.Error()))
-			fmt.Println("MkdirAll() failed", err.Error(), "ignoring (fix me)")
-			err = nil
-		}
-
-		n := 0
-		for i := 0; i < len(values); i++ {
-			key := values[i]
-			f := c.HashDir() + hash + "/" + key
-			info, err := Stat(f)
-			if info == nil && os.IsNotExist(err) {
-				n++
-			}
-			if err := WriteFile(f, []byte(values[i+1]), 0664); err != nil {
-				// return jkv.NewIntCmd(0, errors.New("write failed "+err.Error()))
-				fmt.Println("write failed", err.Error(), "ignored (fix me)")
-				err = nil
-			}
-			i++
-		}
-		return jkv.NewIntCmd(int64(n), nil)
+		return jkv.NewIntCmd(n, nil)
 	}
-	return jkv.NewIntCmd(0, notOpen())
+	return jkv.NewIntCmd(0, errors.New("db is not open"))
 }
 
 // Delete a hashed key by removing the file, if no keys exist after the operation remove the hash directory
@@ -223,8 +220,8 @@ func (c *Client) HDel(ctx context.Context, hash string, keys ...string) *jkv.Int
 func (c *Client) HKeys(ctx context.Context, hash string) *jkv.StringSliceCmd {
 	var err error
 	if c.IsOpen {
-		if _, err = os.Stat(c.HashDir() + hash); err == nil {
-			entries, err := os.ReadDir(c.HashDir() + hash)
+		if _, err = Stat(c.HashDir() + hash); err == nil {
+			entries, err := ReadDir(c.HashDir() + hash)
 			if err != nil {
 				return jkv.NewStringSliceCmd([]string{}, err)
 			}
@@ -243,7 +240,7 @@ func (c *Client) HKeys(ctx context.Context, hash string) *jkv.StringSliceCmd {
 func (c *Client) HExists(ctx context.Context, hash, key string) *jkv.BoolCmd {
 	if c.IsOpen {
 		var err error
-		if _, err = os.Stat(c.HashDir() + hash + "/" + key); err != nil {
+		if _, err = Stat(c.HashDir() + hash + "/" + key); err != nil {
 			return jkv.NewBoolCmd(false, err)
 		}
 		return jkv.NewBoolCmd(true, nil)

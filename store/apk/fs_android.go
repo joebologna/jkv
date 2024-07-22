@@ -1,6 +1,7 @@
 package apk
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -76,22 +77,29 @@ func RemoveAll(name string) (err error) {
 }
 
 func ReadFile(name string) (data []byte, err error) {
-	r, err := storage.Reader(storage.NewFileURI(name))
+	fURI := storage.NewFileURI(name)
+	fmt.Println("trying to read", fURI)
+	r, err := storage.Reader(fURI)
 	if err == nil {
 		n, err := r.Read(data)
 		if n == 0 || err != nil {
+			fmt.Printf("Reading %s failed, err: %#v\n", name, err.Error())
 			return []byte{}, err
 		}
+		fmt.Printf("Reading %s succeeded, value: %s\n", name, string(data))
 		return data, err
 	}
+	fmt.Printf("getting Reader for %s failed, err: %#v\n", name, err.Error())
 	return []byte{}, err
 }
 
 func WriteFile(name string, data []byte, mode FileMode) (err error) {
-	w, err := storage.Writer(storage.NewFileURI(name))
+	f := storage.NewFileURI(name)
+	w, err := storage.Writer(f)
 	if err == nil {
 		return func() (err error) { _, err = w.Write(data); return err }()
 	}
+	fmt.Printf("Writing %s (%s) succeeded, value: %s\n", name, f, string(data))
 	return nil
 }
 
