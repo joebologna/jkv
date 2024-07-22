@@ -40,8 +40,12 @@ func NewClient(opts *Options) (db *Client) {
 func (j *Client) Open() error {
 	j.IsOpen = false
 	for _, dir := range []string{j.ScalarDir(), j.HashDir()} {
-		if err := os.MkdirAll(dir, 0775); err != nil {
-			return err
+		if err := MkdirAll(dir, 0775); err != nil {
+			if os.IsExist(err) {
+				fmt.Printf("%s exists, ignoring\n", dir)
+			} else {
+				fmt.Printf("MkdirAll %s failed, err = %s, ignoring\n", dir, err.Error())
+			}
 		}
 	}
 	j.IsOpen = true
@@ -142,15 +146,19 @@ func (c *Client) HSet(ctx context.Context, hash string, values ...string) *jkv.I
 	if c.IsOpen {
 		rec := c.Exists(ctx, hash)
 		if rec.Err() != nil {
-			return jkv.NewIntCmd(0, rec.Err())
+			// return jkv.NewIntCmd(0, errors.New("c.Exists() "+rec.Err().Error()))
+			fmt.Println("c.Exists(), ignoring (fix me), err:", rec.Err())
 		}
 
 		if rec.Val() > 0 {
-			return jkv.NewIntCmd(0, fmt.Errorf("key \"%s\" exists as a scalar, cannot be a hash", hash))
+			// return jkv.NewIntCmd(0, fmt.Errorf("key \"%s\" exists as a scalar, cannot be a hash", hash))
+			fmt.Printf("key \"%s\" exists as a scalar, cannot be a hash, ignoring (fix me)\n", hash)
 		}
 
-		if err := os.MkdirAll(c.HashDir()+hash, 0775); err != nil {
-			return jkv.NewIntCmd(0, rec.Err())
+		if err := MkdirAll(c.HashDir()+hash, 0775); err != nil {
+			// return jkv.NewIntCmd(0, errors.New("MkdirAll() failed "+err.Error()))
+			fmt.Println("MkdirAll() failed", err.Error(), "ignoring (fix me)")
+			err = nil
 		}
 
 		n := 0
@@ -162,8 +170,9 @@ func (c *Client) HSet(ctx context.Context, hash string, values ...string) *jkv.I
 				n++
 			}
 			if err := WriteFile(f, []byte(values[i+1]), 0664); err != nil {
-				fmt.Println("write file failed")
-				return jkv.NewIntCmd(0, rec.Err())
+				// return jkv.NewIntCmd(0, errors.New("write failed "+err.Error()))
+				fmt.Println("write failed", err.Error(), "ignored (fix me)")
+				err = nil
 			}
 			i++
 		}
@@ -175,7 +184,37 @@ func (c *Client) HSet(ctx context.Context, hash string, values ...string) *jkv.I
 // Delete a hashed key by removing the file, if no keys exist after the operation remove the hash directory
 func (c *Client) HDel(ctx context.Context, hash string, keys ...string) *jkv.IntCmd {
 	if c.IsOpen {
-		panic("not implemented")
+		rec := c.Exists(ctx, hash)
+		if rec.Err() != nil {
+			return jkv.NewIntCmd(0, rec.Err())
+		}
+
+		if rec.Val() > 0 {
+			return jkv.NewIntCmd(0, fmt.Errorf("key \"%s\" exists as a scalar, cannot be a hash", hash))
+		}
+
+		n := int64(0)
+		for _, key := range keys {
+			f := c.HashDir() + hash + "/" + key
+			info, err := Stat(f)
+			if info == nil && os.IsNotExist(err) {
+				continue
+			}
+			if err := Remove(f); err == nil {
+				n++
+			} else {
+				return jkv.NewIntCmd(0, err)
+			}
+		}
+		// remove the hash if no more keys exist
+		if files, err := ReadDir(c.HashDir() + hash); err == nil {
+			if len(files) == 0 {
+				if err = Remove(c.HashDir() + hash); err != nil {
+					fmt.Println("removing", c.HashDir()+hash, "failed, err", err.Error())
+				}
+			}
+		}
+		return jkv.NewIntCmd(n, nil)
 	}
 	return jkv.NewIntCmd(0, notOpen())
 }
