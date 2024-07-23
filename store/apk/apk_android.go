@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"fyne.io/fyne/v2/storage"
 	"github.com/panduit-joeb/jkv"
 )
 
@@ -28,41 +29,95 @@ func GetDBDir() (dir string) {
 	return os.TempDir() + "/jkv_db"
 }
 
-func (j *Client) ScalarDir() string { return j.DBDir + "/scalars/" }
-func (j *Client) HashDir() string   { return j.DBDir + "/hashes/" }
+func (j *Client) ScalarDir() string { return j.DBDir + "/scalars" }
+func (j *Client) HashDir() string   { return j.DBDir + "/hashes" }
 func notOpen() error                { return errors.New("DB is not open") }
 
 func NewClient(opts *Options) (db *Client) {
 	return &Client{DBDir: opts.Addr, IsOpen: false}
 }
 
-// Open a database by creating the directories required if they don't exist and mark the database open
-func (j *Client) Open() error {
-	if !j.IsOpen {
-		for _, dir := range []string{j.ScalarDir(), j.HashDir()} {
-			// var fi FileInfo
-			var err error
-			if _, err = Stat(dir); err == nil {
-				fmt.Println(dir, "exists good")
-				continue
-			}
-			// fmt.Printf("Stat returns %#v, err: %#v, trying MkdirAll\n", fi, err)
-			if err := MkdirAll(dir, 0775); err != nil {
-				if os.IsExist(err) {
-					fmt.Printf("%s exists, ignoring\n", dir)
-				} else {
-					fmt.Printf("MkdirAll %s failed, err = %s, ignoring\n", dir, err.Error())
-				}
-			} else {
-				fmt.Printf("MkdirAll(%s) - success\n", dir)
-			}
-		}
-		j.IsOpen = true
-	} else {
-		fmt.Println("db is already opened")
-	}
+func (j *Client) Open() (err error) {
+	var uri = storage.NewFileURI(j.DBDir)
+	storage.CreateListable(uri)
+	uri = storage.NewFileURI(j.ScalarDir())
+	storage.CreateListable(uri)
+	uri = storage.NewFileURI(j.HashDir())
+	storage.CreateListable(uri)
+	j.IsOpen = true
 	return nil
 }
+
+// Open a database by creating the directories required if they don't exist and mark the database open
+// func (j *Client) Open() (err error) {
+// 	uri := storage.NewFileURI(j.DBDir)
+// 	ok, err := storage.CanList(uri)
+// 	fmt.Printf("CanList(%s): ok = %t, err = %#v\n", uri, ok, err)
+// 	ok, err = storage.Exists(uri)
+// 	fmt.Printf("Exists(%s): ok = %t, err = %#v\n", uri, ok, err)
+// 	err = storage.CreateListable(uri)
+// 	fmt.Printf("CreateListable(%s): err = %#v\n", uri, err)
+// 	ok, err = storage.CanList(uri)
+// 	fmt.Printf("CanList(%s): ok = %t, err = %#v\n", uri, ok, err)
+// 	if !j.IsOpen {
+// 		fmt.Println("db is not open yet.")
+// 		fmt.Println("making sub dirs")
+// 		if err = j.makeSubDirs(); err != nil {
+// 			return err
+// 		}
+// 		fmt.Println("making sub dirs worked, db is open")
+// 		j.IsOpen = true
+// 	} else {
+// 		fmt.Println("db is already opened")
+// 	}
+// 	return nil
+// }
+
+// func (j *Client) makeSubDirs() (err error) {
+// 	ok := true
+// 	for _, dir := range []string{j.HashDir(), j.ScalarDir()} {
+// 		uri := storage.NewFileURI(dir)
+// 		ok, err = storage.Exists(uri)
+// 		fmt.Printf("Exists(%s): ok = %t, err = %#v\n", uri, ok, err)
+// 		err = storage.CreateListable(uri)
+// 		fmt.Printf("CreateListable(%s): err = %#v\n", uri, err)
+// 		ok, err = storage.CanList(uri)
+// 		fmt.Printf("CanList(%s): ok = %t, err = %#v\n", uri, ok, err)
+// 	}
+// 	return err
+// }
+
+// func (j *Client) makeSubDirs() (err error) {
+// 	ok := true
+// 	for _, dir := range []string{j.HashDir(), j.ScalarDir()} {
+// 		_, err = Stat(dir)
+// 		if err != nil {
+// 			if os.IsNotExist(err) {
+// 				fmt.Println(dir, "does not exist, try to make it")
+// 				if err = Mkdir(j.DBDir, 0775); err == nil {
+// 					fmt.Println(j.DBDir, "created")
+// 					ok = ok && true
+// 				} else {
+// 					fmt.Println("mkdir", j.DBDir, "failed", err.Error())
+// 					ok = ok && false
+// 				}
+// 			} else if err == nil || os.IsExist(err) {
+// 				fmt.Println(dir, "exists, skip making it")
+// 				ok = ok && true
+// 			} else {
+// 				fmt.Println("stat", j.DBDir, "failed with unknown err:", err.Error())
+// 				ok = ok && false
+// 			}
+// 		} else {
+// 			fmt.Println("stat", j.DBDir, "returned nil, assuming this is good")
+// 			ok = ok && true
+// 		}
+// 	}
+// 	if ok {
+// 		return nil
+// 	}
+// 	return errors.New("something bad happened, err: " + err.Error())
+// }
 
 // Close a database, basically just mark it closed
 func (j *Client) Close() { j.IsOpen = false }
@@ -78,7 +133,7 @@ func (j *Client) FlushDB(ctx context.Context) *jkv.StatusCmd {
 // Return data in scalar key data, error is file is missing or inaccessible
 func (c *Client) Get(ctx context.Context, key string) *jkv.StringCmd {
 	if c.IsOpen {
-		data, err := ReadFile(c.ScalarDir() + key)
+		data, err := ReadFile(c.ScalarDir() + "/" + key)
 		return jkv.NewStringCmd(string(data), err)
 	}
 	return jkv.NewStringCmd("", notOpen())
@@ -97,7 +152,7 @@ func (c *Client) Del(ctx context.Context, keys ...string) *jkv.IntCmd {
 	if c.IsOpen {
 		n := 0
 		for _, key := range keys {
-			if Remove(c.ScalarDir()+key) == nil {
+			if Remove(c.ScalarDir()+"/"+key) == nil {
 				n++
 			}
 		}
@@ -128,7 +183,7 @@ func (c *Client) Keys(ctx context.Context, pattern string) *jkv.StringSliceCmd {
 func (c *Client) Exists(ctx context.Context, keys ...string) *jkv.IntCmd {
 	if c.IsOpen {
 		// todo: add a loop here
-		if _, err := Stat(c.ScalarDir() + keys[0]); err != nil {
+		if _, err := Stat(c.ScalarDir() + "/" + keys[0]); err != nil {
 			if os.IsNotExist(err) {
 				return jkv.NewIntCmd(int64(0), nil)
 			}
@@ -143,7 +198,7 @@ func (c *Client) Exists(ctx context.Context, keys ...string) *jkv.IntCmd {
 // Return data in hashed key data, error is file is missing or inaccessible
 func (c *Client) HGet(ctx context.Context, hash, key string) *jkv.StringCmd {
 	if c.IsOpen {
-		f := c.HashDir() + hash + "/" + key
+		f := c.HashDir() + "/" + hash + "/" + key
 		data, err := ReadFile(f)
 		if err != nil {
 			fmt.Println("reading", f, "failed, err:", err.Error())
@@ -165,11 +220,11 @@ func (c *Client) HSet(ctx context.Context, hash string, values ...string) *jkv.I
 			return jkv.NewIntCmd(0, errors.New("scalar exists, this is bad"))
 		}
 		// todo: add loop here
-		f := c.HashDir() + hash + "/" + values[0]
+		f := c.HashDir() + "/" + hash + "/" + values[0]
 		err := WriteFile(f, []byte(values[1]), 0644)
 		if err == nil {
 			n++
-			fmt.Printf("WriteFile(%s, %s), succeeded.\n", f, values[1])
+			// fmt.Printf("WriteFile(%s, %s), succeeded.\n", f, values[1])
 		} else {
 			fmt.Printf("WriteFile(%s, %s), failed. err: %#v\n", f, values[1], err)
 		}
@@ -192,7 +247,7 @@ func (c *Client) HDel(ctx context.Context, hash string, keys ...string) *jkv.Int
 
 		n := int64(0)
 		for _, key := range keys {
-			f := c.HashDir() + hash + "/" + key
+			f := c.HashDir() + "/" + hash + "/" + key
 			info, err := Stat(f)
 			if info == nil && os.IsNotExist(err) {
 				continue
@@ -204,10 +259,10 @@ func (c *Client) HDel(ctx context.Context, hash string, keys ...string) *jkv.Int
 			}
 		}
 		// remove the hash if no more keys exist
-		if files, err := ReadDir(c.HashDir() + hash); err == nil {
+		if files, err := ReadDir(c.HashDir() + "/" + hash); err == nil {
 			if len(files) == 0 {
-				if err = Remove(c.HashDir() + hash); err != nil {
-					fmt.Println("removing", c.HashDir()+hash, "failed, err", err.Error())
+				if err = Remove(c.HashDir() + "/" + hash); err != nil {
+					fmt.Println("removing", c.HashDir()+"/"+hash, "failed, err", err.Error())
 				}
 			}
 		}
@@ -220,8 +275,8 @@ func (c *Client) HDel(ctx context.Context, hash string, keys ...string) *jkv.Int
 func (c *Client) HKeys(ctx context.Context, hash string) *jkv.StringSliceCmd {
 	var err error
 	if c.IsOpen {
-		if _, err = Stat(c.HashDir() + hash); err == nil {
-			entries, err := ReadDir(c.HashDir() + hash)
+		if _, err = Stat(c.HashDir() + "/" + hash); err == nil {
+			entries, err := ReadDir(c.HashDir() + "/" + hash)
 			if err != nil {
 				return jkv.NewStringSliceCmd([]string{}, err)
 			}
@@ -240,7 +295,7 @@ func (c *Client) HKeys(ctx context.Context, hash string) *jkv.StringSliceCmd {
 func (c *Client) HExists(ctx context.Context, hash, key string) *jkv.BoolCmd {
 	if c.IsOpen {
 		var err error
-		if _, err = Stat(c.HashDir() + hash + "/" + key); err != nil {
+		if _, err = Stat(c.HashDir() + "/" + hash + "/" + key); err != nil {
 			return jkv.NewBoolCmd(false, err)
 		}
 		return jkv.NewBoolCmd(true, nil)

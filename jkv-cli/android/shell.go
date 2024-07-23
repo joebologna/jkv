@@ -13,6 +13,7 @@ import (
 
 	"github.com/panduit-joeb/jkv"
 	"github.com/panduit-joeb/jkv/pkg"
+	"github.com/panduit-joeb/jkv/store/apk"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -21,7 +22,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-func genShell(rdb jkv.Client) fyne.CanvasObject {
+func genShell(rdb *apk.Client) fyne.CanvasObject {
 	winWidth := float32(1024)
 	objSize := fyne.NewSquareSize(winWidth / 4)
 	bg := canvas.NewRectangle(color.White)
@@ -74,38 +75,7 @@ func doCmd(ctx context.Context, rdb jkv.Client, cmd string, input, output *widge
 	tokens := strings.Fields(input.Text)
 	fmt.Printf("doCmd() called with cmd=%s, tokens=%s\n", cmd, strings.Join(tokens, " "))
 	if cmd == "getOffline" {
-		hashes := os.TempDir() + "/hashes/"
-		mkdir(hashes)
-		hash := hashes + "UserSelected"
-		mkdir(hash)
-		key := hash + "/Offline"
-		uri := storage.NewFileURI(key)
-		fmt.Println(uri)
-		w, err := storage.Writer(uri)
-		if err == nil {
-			_, err = w.Write([]byte("1"))
-			if err == nil {
-				fmt.Println("Write good")
-				w.Close()
-				r, err := storage.Reader(uri)
-				if err == nil {
-					buf := make([]byte, 128)
-					_, err := r.Read(buf)
-					if err == nil {
-						fmt.Printf("Got: %s\n", string(buf))
-						r.Close()
-					} else {
-						fmt.Println("Read bad", err.Error())
-					}
-				} else {
-					fmt.Println("Reader bad", err.Error())
-				}
-			} else {
-				fmt.Println("Write bad", err.Error())
-			}
-		} else {
-			fmt.Println("Writer bad", err.Error())
-		}
+		reportCmd(rdb.HGet(ctx, "UserSelected", "Offline"), output, msg)
 	} else if len(tokens) == 0 {
 		switch cmd {
 		case "keys":
@@ -165,14 +135,7 @@ func toggleOnline(ctx context.Context, rdb jkv.Client) *jkv.StatusCmd {
 	if rec.Err() != nil {
 		return jkv.NewStatusCmd("(nil)", rec.Err())
 	}
-	if pkg.StringToBool(rec.Val()) {
-		rc := rdb.HSet(ctx, "UserSelected", "Offline", pkg.BoolToString(false))
-		if rc.Err() != nil {
-			return jkv.NewStatusCmd("(nil)", rec.Err())
-		}
-		return jkv.NewStatusCmd("OK", nil)
-	}
-	rc := rdb.HSet(ctx, "UserSelected", "Offline", pkg.BoolToString(true))
+	rc := rdb.HSet(ctx, "UserSelected", "Offline", pkg.BoolToString(!pkg.StringToBool(rec.Val())))
 	if rc.Err() != nil {
 		return jkv.NewStatusCmd("(nil)", rec.Err())
 	}
@@ -306,23 +269,24 @@ func TestStorage() {
 
 func initDb(ctx context.Context, rdb jkv.Client) {
 	// dup for testing
+	rdb.Open()
+	logInt("Networks...", rdb.HSet(ctx, "Networks", "default", string(JKVDB_hashes_Networks_default)))
+	logInt("Networks...", rdb.HSet(ctx, "Networks", "syscfg_ips", string(JKVDB_hashes_Networks_syscfg_ips)))
+	logInt("Networks...", rdb.HSet(ctx, "Networks", "static", string(JKVDB_hashes_Networks_static)))
+	logInt("Networks...", rdb.HSet(ctx, "Networks", "dhcp", string(JKVDB_hashes_Networks_dhcp)))
+	logInt("SuperScreens...", rdb.HSet(ctx, "SuperScreens", "test_mode", string(JKVDB_hashes_SuperScreens_test_mode)))
+	logInt("SuperScreens...", rdb.HSet(ctx, "SuperScreens", "qr", string(JKVDB_hashes_SuperScreens_qr)))
+	logInt("SuperScreens...", rdb.HSet(ctx, "SuperScreens", "system_config", string(JKVDB_hashes_SuperScreens_system_config)))
+	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "Cloud", string(JKVDB_hashes_UserSelected_Cloud)))
+	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "ScreenInverted", string(JKVDB_hashes_UserSelected_ScreenInverted)))
+	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "ScreenKey", string(JKVDB_hashes_UserSelected_ScreenKey)))
 	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "Offline", string(JKVDB_hashes_UserSelected_Offline)))
-
-	// logInt("Networks...", rdb.HSet(ctx, "Networks", "default", string(JKVDB_hashes_Networks_default)))
-	// logInt("Networks...", rdb.HSet(ctx, "Networks", "syscfg_ips", string(JKVDB_hashes_Networks_syscfg_ips)))
-	// logInt("Networks...", rdb.HSet(ctx, "Networks", "static", string(JKVDB_hashes_Networks_static)))
-	// logInt("Networks...", rdb.HSet(ctx, "Networks", "dhcp", string(JKVDB_hashes_Networks_dhcp)))
-	// logInt("SuperScreens...", rdb.HSet(ctx, "SuperScreens", "test_mode", string(JKVDB_hashes_SuperScreens_test_mode)))
-	// logInt("SuperScreens...", rdb.HSet(ctx, "SuperScreens", "qr", string(JKVDB_hashes_SuperScreens_qr)))
-	// logInt("SuperScreens...", rdb.HSet(ctx, "SuperScreens", "system_config", string(JKVDB_hashes_SuperScreens_system_config)))
-	// logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "Cloud", string(JKVDB_hashes_UserSelected_Cloud)))
-	// logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "ScreenInverted", string(JKVDB_hashes_UserSelected_ScreenInverted)))
-	// logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "ScreenKey", string(JKVDB_hashes_UserSelected_ScreenKey)))
-	// logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "Offline", string(JKVDB_hashes_UserSelected_Offline)))
-	// logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "ScreenCollection", string(JKVDB_hashes_UserSelected_ScreenCollection)))
-	// logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "InternetEnabled", string(JKVDB_hashes_UserSelected_InternetEnabled)))
-	// logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "Internet", string(JKVDB_hashes_UserSelected_Internet)))
-	// logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "sleep", string(JKVDB_hashes_UserScreens_sleep)))
-	// logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "passcode", string(JKVDB_hashes_UserScreens_passcode)))
-	// logInt("SquareImages...", rdb.HSet(ctx, "SquareImages", "qr", string(JKVDB_hashes_SquareImages_qr)))
+	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "ScreenCollection", string(JKVDB_hashes_UserSelected_ScreenCollection)))
+	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "InternetEnabled", string(JKVDB_hashes_UserSelected_InternetEnabled)))
+	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "Internet", string(JKVDB_hashes_UserSelected_Internet)))
+	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "sleep", string(JKVDB_hashes_UserScreens_sleep)))
+	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "passcode", string(JKVDB_hashes_UserScreens_passcode)))
+	logInt("SquareImages...", rdb.HSet(ctx, "SquareImages", "qr", string(JKVDB_hashes_SquareImages_qr)))
+	rec := rdb.HGet(ctx, "UserSelected", "Offline")
+	fmt.Printf("Offline = %s, err = %#v\n", rec.Val(), rec.Err())
 }

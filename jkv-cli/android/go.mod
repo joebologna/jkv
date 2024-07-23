@@ -2,8 +2,8 @@ module main
 
 go 1.19
 
-// replace fyne.io/fyne/v2 => ../../../../fyne
-replace fyne.io/fyne/v2 => ../../../../../../fyne
+replace fyne.io/fyne/v2 => ../../../../fyne
+// replace fyne.io/fyne/v2 => ../../../../../../fyne
 
 replace github.com/panduit-joeb/jkv => ../../../jkv
 

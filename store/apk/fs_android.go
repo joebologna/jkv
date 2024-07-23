@@ -7,6 +7,7 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/storage"
+	"fyne.io/fyne/v2/storage/repository"
 )
 
 type FileMode uint32
@@ -43,22 +44,18 @@ type FSOp interface {
 	Stat(string) (FileInfo, error)
 }
 
-func MkdirAll(name string, mode FileMode) (err error) {
-	if _, err = Stat(name); err == nil {
-		//implies file exists, abort
-		return os.ErrExist
-	}
-	// this is tricky because the top level directory is unknown, for now this method is always called with 2 levels, i.e. jkv_db/hashes or jkv_db/scalars, so we just need to make the jkv_db directory, then the full directory
-	u := storage.NewFileURI(name)
-	if baseDir, err := storage.Parent(u); err == nil {
-		storage.CreateListable(baseDir)
-		return storage.CreateListable(u)
-	}
-	return err
-}
-
 func Mkdir(name string, mode FileMode) (err error) {
-	return storage.CreateListable(storage.NewFileURI(name))
+	err = storage.CreateListable(storage.NewFileURI(name))
+	if err == repository.ErrOperationNotSupported {
+		fmt.Println("mkdir", name, "not supported")
+		return err
+	} else if err != nil {
+		fmt.Println("mkdir", name, "failed with err", err.Error())
+		return err
+	} else {
+		fmt.Println("mkdir", name, "succeeded")
+		return nil
+	}
 }
 
 func RemoveAll(name string) (err error) {

@@ -92,8 +92,12 @@ func main() {
 		label.Refresh()
 		c.Refresh(c.Content())
 		f := apk.NewClient(&apk.Options{Addr: apk.GetDBDir()})
-		f.Open()
-		c.SetContent(genShell(f))
+		if err := f.Open(); err == nil {
+			fmt.Printf("db check. j.IsOpen = %t\n", f.IsOpen)
+			c.SetContent(genShell(f))
+		} else {
+			fmt.Printf("j.Open() failed, err: %#v\n", err)
+		}
 	}()
 
 	w.ShowAndRun()
