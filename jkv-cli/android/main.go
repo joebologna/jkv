@@ -15,6 +15,8 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/data/binding"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -72,6 +74,7 @@ var JKVDB_hashes_SquareImages_qr []byte
 func main() {
 	os.Setenv("FYNE_THEME", "dark")
 	a := app.NewWithID("com.atlona.touchos.preferences")
+	a.Settings().SetTheme(&myTheme{})
 	w := a.NewWindow("JKV-CLI")
 	winWidth := float32(1024)
 	winSize := fyne.NewSquareSize(winWidth)
@@ -85,20 +88,50 @@ func main() {
 
 	w.Resize(winSize)
 
+	// go func() {
+	// 	objs := c.Content().(*fyne.Container).Objects
+	// 	label := objs[0].(*fyne.Container).Objects[1].(*widget.Label)
+	// 	label.SetText("Booted.")
+	// 	label.Refresh()
+	// 	c.Refresh(c.Content())
+	// 	f := apk.NewClient(&apk.Options{Addr: apk.GetDBDir()})
+	// 	if err := f.Open(); err == nil {
+	// 		fmt.Printf("db check. j.IsOpen = %t\n", f.IsOpen)
+	// 		c.SetContent(genShell(f))
+	// 		// c.SetContent(fstest())
+	// 	} else {
+	// 		fmt.Printf("j.Open() failed, err: %#v\n", err)
+	// 	}
+	// }()
 	go func() {
-		objs := c.Content().(*fyne.Container).Objects
-		label := objs[0].(*fyne.Container).Objects[1].(*widget.Label)
-		label.SetText("Booted.")
-		label.Refresh()
-		c.Refresh(c.Content())
-		f := apk.NewClient(&apk.Options{Addr: apk.GetDBDir()})
-		if err := f.Open(); err == nil {
-			fmt.Printf("db check. j.IsOpen = %t\n", f.IsOpen)
-			// c.SetContent(genShell(f))
-			c.SetContent(fstest())
-		} else {
-			fmt.Printf("j.Open() failed, err: %#v\n", err)
-		}
+		ctx := context.Background()
+		opts := apk.Options{Addr: apk.GetDBDir()}
+		rdb := apk.NewClient(&opts)
+		data := binding.BindStringList(
+			&[]string{},
+		)
+
+		list := widget.NewListWithData(data,
+			func() fyne.CanvasObject {
+				return widget.NewLabel("template")
+			},
+			func(i binding.DataItem, o fyne.CanvasObject) {
+				o.(*widget.Label).Bind(i.(binding.String))
+			})
+
+		add := widget.NewButton("Run Tests", func() {
+			for _, val := range runTests(ctx, rdb, opts) {
+				data.Append(val)
+			}
+		})
+		clear := widget.NewButton("Clear Results", func() {
+			data.Set([]string{})
+		})
+		bye := widget.NewButton("Bye", func() {
+			os.Exit(0)
+		})
+
+		c.SetContent(container.NewBorder(nil, container.NewCenter(container.NewHBox(add, clear, bye)), nil, nil, list))
 	}()
 
 	w.ShowAndRun()
@@ -138,4 +171,42 @@ func initdb(ctx context.Context, f jkv.Client) {
 	// f.HSet(ctx, "UserSelected", "sleep", string(JKVDB_hashes_UserScreens_sleep))
 	// f.HSet(ctx, "UserSelected", "passcode", string(JKVDB_hashes_UserScreens_passcode))
 	// f.HSet(ctx, "SquareImages", "qr", string(JKVDB_hashes_SquareImages_qr))
+}
+
+type myTheme struct{}
+
+func (m *myTheme) Font(t fyne.TextStyle) fyne.Resource {
+	return theme.DefaultTheme().Font(t)
+}
+
+func (m *myTheme) Icon(i fyne.ThemeIconName) fyne.Resource {
+	return theme.DefaultTheme().Icon(i)
+}
+
+func (m *myTheme) Size(name fyne.ThemeSizeName) float32 {
+	// fmt.Println("ThemeSizeName:", name, theme.DefaultTheme().Size(name))
+	if name == theme.SizeNameText {
+		return 10
+	}
+	if name == theme.SizeNameLineSpacing {
+		return 2
+	}
+	if name == theme.SizeNameInnerPadding {
+		return 2
+	}
+	if name == theme.SizeNamePadding {
+		return 2
+	}
+	return theme.DefaultTheme().Size(name)
+}
+
+func (m myTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) color.Color {
+	// fmt.Println("Color:", name, variant)
+	if name == theme.ColorNameInputBackground {
+		return color.White
+	}
+	if name == theme.ColorNameForeground {
+		return color.White
+	}
+	return theme.DefaultTheme().Color(name, variant)
 }

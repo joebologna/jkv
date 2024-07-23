@@ -1,4 +1,4 @@
-@test "HSET/KEYS/HDEL -f" {
+@test "A: HSET/KEYS/HDEL -f" {
     [ "$(redis-cli flushdb)" = "OK" ]
     [ "$(redis-cli hset hash key1 one)" = "1" ]
     [ "$(redis-cli hset hash key1 one)" = "0" ]
@@ -28,7 +28,7 @@
     [ "$(./jkv-cli -f keys '*' | sha1sum)" = "$(redis-cli keys '*' | sha1sum)" ]
 }
 
-@test "HSET/KEYS -r" {
+@test "B: HSET/KEYS -r" {
     [ "$(redis-cli flushdb)" = "OK" ]
     [ "$(redis-cli hset hash key1 one)" = "1" ]
     [ "$(redis-cli hset hash key1 one)" = "0" ]
@@ -54,13 +54,13 @@
     [ "$(./jkv-cli -r keys '*' | sha1sum)" = "$(redis-cli keys '*' | sha1sum)" ]
 }
 
-@test "Test SET/GET -f vs. -r" {
+@test "C: Test SET/GET -f vs. -r" {
     [ "$(./jkv-cli -f flushdb)" = "OK" ]
     [ "$(./jkv-cli -f set a b)" = "$(./jkv-cli -r set a b)" ]
     [ "$(./jkv-cli -f get a)" = "$(./jkv-cli -r get a)" ]
 }
 
-@test "Test SET/DEL -f vs. -r" {
+@test "D: Test SET/DEL -f vs. -r" {
     [ "$(./jkv-cli -f flushdb)" = "OK" ]
     [ "$(./jkv-cli -f set a b)" = "$(./jkv-cli -r set a b)" ]
     [ "$(./jkv-cli -f del a)" = "$(./jkv-cli -r del a)" ]
@@ -71,7 +71,7 @@
     [ "$(./jkv-cli -f del key1 key2 key3)" = "$(./jkv-cli -r del key1 key2 key3)" ]
 }
 
-@test "Test EXISTS -f vs. -r" {
+@test "E: Test EXISTS -f vs. -r" {
     [ "$(./jkv-cli -f set a b)" = "$(./jkv-cli -r set a b)" ]
     [ "$(./jkv-cli -f set a b)" = "$(redis-cli set a b)" ]
     [ "$(./jkv-cli -f set b c)" = "$(./jkv-cli -r set b c)" ]
@@ -84,11 +84,11 @@
     [ "$(./jkv-cli -f exists a b | cut -d' ' -f2)" = "$(redis-cli exists a b)" ]
 }
 
-@test "Test SET Syntax Error" {
+@test "F: Test SET Syntax Error" {
     [ "$(./jkv-cli -f set a b c)" = "$(./jkv-cli -r set a b c)" ]
 }
 
-@test "Test HEXISTS -f vs. -r" {
+@test "G: Test HEXISTS -f vs. -r" {
     [ "$(./jkv-cli -f flushdb)" = "OK" ]
     [ "$(./jkv-cli -r flushdb)" = "OK" ]
     [ "$(./jkv-cli -f hset hash key1 one key2 two key3 three)" = "$(./jkv-cli -r hset hash key1 one key2 two key3 three)" ]
@@ -97,7 +97,7 @@
     [ "$(./jkv-cli -f hexists hash key3)" = "$(./jkv-cli -r hexists hash key3)" ]
 }
 
-@test "Test HKEYS -f" {
+@test "H: Test HKEYS -f" {
     redis-cli flushdb
     redis-cli hset hash key1 one key2 two key3 three
     [ "$(./jkv-cli -f flushdb)" = "OK" ]
@@ -105,7 +105,7 @@
     [ "$(./jkv-cli -f hkeys hash | sha1sum)" = "$(redis-cli hkeys hash | sha1sum)" ]
 }
 
-@test "Test HKEYS -r" {
+@test "I: Test HKEYS -r" {
     redis-cli flushdb
     redis-cli hset hash key1 one key2 two key3 three
     [ "$(./jkv-cli -r flushdb)" = "OK" ]
@@ -113,7 +113,7 @@
     [ "$(./jkv-cli -r hkeys hash | sha1sum)" = "$(redis-cli hkeys hash | sha1sum)" ]
 }
 
-@test "Test -x here" {
+@test "J: Test -x here" {
     [ "$(./jkv-cli -f flushdb)" = "OK" ]
     [ "$(printf one | ./jkv-cli -f -x hset hash key1)" = "1" ]
     [ "$(printf two | ./jkv-cli -f -x hset hash key2)" = "1" ]
@@ -145,11 +145,11 @@
     redis-cli keys '*'
 }
 
-@test "PING" {
+@test "K: PING" {
     [ "$(./jkv-cli ping)" = "PONG" ]
 }
 
-@test "DB Location" {
+@test "L: DB Location" {
     [ "$(./jkv-cli flushdb)" = "OK" ]
     [ ! -d "${HOME}/jkv_db" ]
     [ "$(./jkv-cli set key1 one)" = "OK" ]

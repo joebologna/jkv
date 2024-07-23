@@ -72,7 +72,7 @@ func (c *Client) Get(ctx context.Context, key string) *jkv.StringCmd {
 // Set a scalar key to a value
 func (c *Client) Set(ctx context.Context, key, value string, expiration time.Duration) *jkv.StatusCmd {
 	if c.IsOpen {
-		return jkv.NewStatusCmd("OK", os.WriteFile(c.DBDir+"/scalars/"+key, []byte(value), 0660))
+		return jkv.NewStatusCmd("OK", os.WriteFile(c.ScalarDir()+key, []byte(value), 0660))
 	}
 	return jkv.NewStatusCmd("(nil)", notOpen())
 }
