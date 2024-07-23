@@ -258,25 +258,25 @@ func TestStorage() {
 	writer.Close()
 }
 
-// func initDb(ctx context.Context, rdb jkv.Client) {
-// 	// dup for testing
-// 	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "Offline", string(JKVDB_hashes_UserSelected_Offline)))
+func initDb(ctx context.Context, rdb jkv.Client) {
+	// dup for testing
+	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "Offline", string(JKVDB_hashes_UserSelected_Offline)))
 
-// 	logInt("Networks...", rdb.HSet(ctx, "Networks", "default", string(JKVDB_hashes_Networks_default)))
-// 	logInt("Networks...", rdb.HSet(ctx, "Networks", "syscfg_ips", string(JKVDB_hashes_Networks_syscfg_ips)))
-// 	logInt("Networks...", rdb.HSet(ctx, "Networks", "static", string(JKVDB_hashes_Networks_static)))
-// 	logInt("Networks...", rdb.HSet(ctx, "Networks", "dhcp", string(JKVDB_hashes_Networks_dhcp)))
-// 	logInt("SuperScreens...", rdb.HSet(ctx, "SuperScreens", "test_mode", string(JKVDB_hashes_SuperScreens_test_mode)))
-// 	logInt("SuperScreens...", rdb.HSet(ctx, "SuperScreens", "qr", string(JKVDB_hashes_SuperScreens_qr)))
-// 	logInt("SuperScreens...", rdb.HSet(ctx, "SuperScreens", "system_config", string(JKVDB_hashes_SuperScreens_system_config)))
-// 	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "Cloud", string(JKVDB_hashes_UserSelected_Cloud)))
-// 	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "ScreenInverted", string(JKVDB_hashes_UserSelected_ScreenInverted)))
-// 	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "ScreenKey", string(JKVDB_hashes_UserSelected_ScreenKey)))
-// 	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "Offline", string(JKVDB_hashes_UserSelected_Offline)))
-// 	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "ScreenCollection", string(JKVDB_hashes_UserSelected_ScreenCollection)))
-// 	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "InternetEnabled", string(JKVDB_hashes_UserSelected_InternetEnabled)))
-// 	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "Internet", string(JKVDB_hashes_UserSelected_Internet)))
-// 	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "sleep", string(JKVDB_hashes_UserScreens_sleep)))
-// 	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "passcode", string(JKVDB_hashes_UserScreens_passcode)))
-// 	logInt("SquareImages...", rdb.HSet(ctx, "SquareImages", "qr", string(JKVDB_hashes_SquareImages_qr)))
-// }
+	logInt("Networks...", rdb.HSet(ctx, "Networks", "default", string(JKVDB_hashes_Networks_default)))
+	logInt("Networks...", rdb.HSet(ctx, "Networks", "syscfg_ips", string(JKVDB_hashes_Networks_syscfg_ips)))
+	logInt("Networks...", rdb.HSet(ctx, "Networks", "static", string(JKVDB_hashes_Networks_static)))
+	logInt("Networks...", rdb.HSet(ctx, "Networks", "dhcp", string(JKVDB_hashes_Networks_dhcp)))
+	logInt("SuperScreens...", rdb.HSet(ctx, "SuperScreens", "test_mode", string(JKVDB_hashes_SuperScreens_test_mode)))
+	logInt("SuperScreens...", rdb.HSet(ctx, "SuperScreens", "qr", string(JKVDB_hashes_SuperScreens_qr)))
+	logInt("SuperScreens...", rdb.HSet(ctx, "SuperScreens", "system_config", string(JKVDB_hashes_SuperScreens_system_config)))
+	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "Cloud", string(JKVDB_hashes_UserSelected_Cloud)))
+	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "ScreenInverted", string(JKVDB_hashes_UserSelected_ScreenInverted)))
+	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "ScreenKey", string(JKVDB_hashes_UserSelected_ScreenKey)))
+	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "Offline", string(JKVDB_hashes_UserSelected_Offline)))
+	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "ScreenCollection", string(JKVDB_hashes_UserSelected_ScreenCollection)))
+	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "InternetEnabled", string(JKVDB_hashes_UserSelected_InternetEnabled)))
+	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "Internet", string(JKVDB_hashes_UserSelected_Internet)))
+	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "sleep", string(JKVDB_hashes_UserScreens_sleep)))
+	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "passcode", string(JKVDB_hashes_UserScreens_passcode)))
+	logInt("SquareImages...", rdb.HSet(ctx, "SquareImages", "qr", string(JKVDB_hashes_SquareImages_qr)))
+}
