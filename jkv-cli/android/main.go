@@ -94,7 +94,8 @@ func main() {
 		f := apk.NewClient(&apk.Options{Addr: apk.GetDBDir()})
 		if err := f.Open(); err == nil {
 			fmt.Printf("db check. j.IsOpen = %t\n", f.IsOpen)
-			c.SetContent(genShell(f))
+			// c.SetContent(genShell(f))
+			c.SetContent(fstest())
 		} else {
 			fmt.Printf("j.Open() failed, err: %#v\n", err)
 		}
