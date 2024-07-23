@@ -37,19 +37,23 @@ func genShell(rdb jkv.Client) fyne.CanvasObject {
 	input.OnSubmitted = func(string) { runCmd(ctx, rdb, input, output, msg) }
 	content := container.NewVBox(
 		input,
-		container.NewHBox(
-			widget.NewButton("Go", func() { runCmd(ctx, rdb, input, output, msg) }),
-			widget.NewButton("initdb", func() { initDb(ctx, rdb) }),
-			widget.NewButton("flushdb", func() { doCmd(ctx, rdb, "flushdb", input, output, msg) }),
-			widget.NewButton("set", func() { doCmd(ctx, rdb, "set", input, output, msg) }),
-			widget.NewButton("get", func() { doCmd(ctx, rdb, "get", input, output, msg) }),
-			widget.NewButton("del", func() { doCmd(ctx, rdb, "del", input, output, msg) }),
-			widget.NewButton("keys", func() { doCmd(ctx, rdb, "keys", input, output, msg) }),
-			widget.NewButton("hset", func() { doCmd(ctx, rdb, "hset", input, output, msg) }),
-			widget.NewButton("hget", func() { doCmd(ctx, rdb, "hget", input, output, msg) }),
-			widget.NewButton("hdel", func() { doCmd(ctx, rdb, "hdel", input, output, msg) }),
-			widget.NewButton("hkeys", func() { doCmd(ctx, rdb, "hkeys", input, output, msg) }),
-			widget.NewButton("on/off", func() { doCmd(ctx, rdb, "toggle", input, output, msg) }),
+		container.NewVBox(
+			container.NewHBox(
+				widget.NewButton("Go", func() { runCmd(ctx, rdb, input, output, msg) }),
+				widget.NewButton("initdb", func() { initDb(ctx, rdb) }),
+				widget.NewButton("flushdb", func() { doCmd(ctx, rdb, "flushdb", input, output, msg) }),
+				widget.NewButton("set", func() { doCmd(ctx, rdb, "set", input, output, msg) }),
+				widget.NewButton("get", func() { doCmd(ctx, rdb, "get", input, output, msg) }),
+				widget.NewButton("del", func() { doCmd(ctx, rdb, "del", input, output, msg) }),
+				widget.NewButton("keys", func() { doCmd(ctx, rdb, "keys", input, output, msg) }),
+				widget.NewButton("hset", func() { doCmd(ctx, rdb, "hset", input, output, msg) }),
+				widget.NewButton("hget", func() { doCmd(ctx, rdb, "hget", input, output, msg) }),
+				widget.NewButton("hdel", func() { doCmd(ctx, rdb, "hdel", input, output, msg) }),
+				widget.NewButton("hkeys", func() { doCmd(ctx, rdb, "hkeys", input, output, msg) }),
+				widget.NewButton("on/off", func() { doCmd(ctx, rdb, "toggle", input, output, msg) }),
+				widget.NewButton("getOffline", func() { doCmd(ctx, rdb, "getOffline", input, output, msg) }),
+			),
+			widget.NewButton("Bye", func() { os.Exit(0) }),
 		),
 		msg,
 		output,
@@ -57,10 +61,52 @@ func genShell(rdb jkv.Client) fyne.CanvasObject {
 	return content
 }
 
+func mkdir(dir string) {
+	uri := storage.NewFileURI(dir)
+	if err := storage.CreateListable(uri); err == nil {
+		fmt.Println("mkdir", uri, "ok")
+	} else {
+		fmt.Println("mkdir", uri, "failed, err", err.Error())
+	}
+}
+
 func doCmd(ctx context.Context, rdb jkv.Client, cmd string, input, output *widget.Entry, msg *widget.Label) {
 	tokens := strings.Fields(input.Text)
 	fmt.Printf("doCmd() called with cmd=%s, tokens=%s\n", cmd, strings.Join(tokens, " "))
-	if len(tokens) == 0 {
+	if cmd == "getOffline" {
+		hashes := os.TempDir() + "/hashes/"
+		mkdir(hashes)
+		hash := hashes + "UserSelected"
+		mkdir(hash)
+		key := hash + "/Offline"
+		uri := storage.NewFileURI(key)
+		fmt.Println(uri)
+		w, err := storage.Writer(uri)
+		if err == nil {
+			_, err = w.Write([]byte("1"))
+			if err == nil {
+				fmt.Println("Write good")
+				w.Close()
+				r, err := storage.Reader(uri)
+				if err == nil {
+					buf := make([]byte, 128)
+					_, err := r.Read(buf)
+					if err == nil {
+						fmt.Printf("Got: %s\n", string(buf))
+						r.Close()
+					} else {
+						fmt.Println("Read bad", err.Error())
+					}
+				} else {
+					fmt.Println("Reader bad", err.Error())
+				}
+			} else {
+				fmt.Println("Write bad", err.Error())
+			}
+		} else {
+			fmt.Println("Writer bad", err.Error())
+		}
+	} else if len(tokens) == 0 {
 		switch cmd {
 		case "keys":
 			reportCmd(rdb.Keys(ctx, "*"), output, msg)
@@ -262,21 +308,21 @@ func initDb(ctx context.Context, rdb jkv.Client) {
 	// dup for testing
 	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "Offline", string(JKVDB_hashes_UserSelected_Offline)))
 
-	logInt("Networks...", rdb.HSet(ctx, "Networks", "default", string(JKVDB_hashes_Networks_default)))
-	logInt("Networks...", rdb.HSet(ctx, "Networks", "syscfg_ips", string(JKVDB_hashes_Networks_syscfg_ips)))
-	logInt("Networks...", rdb.HSet(ctx, "Networks", "static", string(JKVDB_hashes_Networks_static)))
-	logInt("Networks...", rdb.HSet(ctx, "Networks", "dhcp", string(JKVDB_hashes_Networks_dhcp)))
-	logInt("SuperScreens...", rdb.HSet(ctx, "SuperScreens", "test_mode", string(JKVDB_hashes_SuperScreens_test_mode)))
-	logInt("SuperScreens...", rdb.HSet(ctx, "SuperScreens", "qr", string(JKVDB_hashes_SuperScreens_qr)))
-	logInt("SuperScreens...", rdb.HSet(ctx, "SuperScreens", "system_config", string(JKVDB_hashes_SuperScreens_system_config)))
-	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "Cloud", string(JKVDB_hashes_UserSelected_Cloud)))
-	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "ScreenInverted", string(JKVDB_hashes_UserSelected_ScreenInverted)))
-	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "ScreenKey", string(JKVDB_hashes_UserSelected_ScreenKey)))
-	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "Offline", string(JKVDB_hashes_UserSelected_Offline)))
-	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "ScreenCollection", string(JKVDB_hashes_UserSelected_ScreenCollection)))
-	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "InternetEnabled", string(JKVDB_hashes_UserSelected_InternetEnabled)))
-	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "Internet", string(JKVDB_hashes_UserSelected_Internet)))
-	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "sleep", string(JKVDB_hashes_UserScreens_sleep)))
-	logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "passcode", string(JKVDB_hashes_UserScreens_passcode)))
-	logInt("SquareImages...", rdb.HSet(ctx, "SquareImages", "qr", string(JKVDB_hashes_SquareImages_qr)))
+	// logInt("Networks...", rdb.HSet(ctx, "Networks", "default", string(JKVDB_hashes_Networks_default)))
+	// logInt("Networks...", rdb.HSet(ctx, "Networks", "syscfg_ips", string(JKVDB_hashes_Networks_syscfg_ips)))
+	// logInt("Networks...", rdb.HSet(ctx, "Networks", "static", string(JKVDB_hashes_Networks_static)))
+	// logInt("Networks...", rdb.HSet(ctx, "Networks", "dhcp", string(JKVDB_hashes_Networks_dhcp)))
+	// logInt("SuperScreens...", rdb.HSet(ctx, "SuperScreens", "test_mode", string(JKVDB_hashes_SuperScreens_test_mode)))
+	// logInt("SuperScreens...", rdb.HSet(ctx, "SuperScreens", "qr", string(JKVDB_hashes_SuperScreens_qr)))
+	// logInt("SuperScreens...", rdb.HSet(ctx, "SuperScreens", "system_config", string(JKVDB_hashes_SuperScreens_system_config)))
+	// logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "Cloud", string(JKVDB_hashes_UserSelected_Cloud)))
+	// logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "ScreenInverted", string(JKVDB_hashes_UserSelected_ScreenInverted)))
+	// logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "ScreenKey", string(JKVDB_hashes_UserSelected_ScreenKey)))
+	// logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "Offline", string(JKVDB_hashes_UserSelected_Offline)))
+	// logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "ScreenCollection", string(JKVDB_hashes_UserSelected_ScreenCollection)))
+	// logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "InternetEnabled", string(JKVDB_hashes_UserSelected_InternetEnabled)))
+	// logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "Internet", string(JKVDB_hashes_UserSelected_Internet)))
+	// logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "sleep", string(JKVDB_hashes_UserScreens_sleep)))
+	// logInt("UserSelected...", rdb.HSet(ctx, "UserSelected", "passcode", string(JKVDB_hashes_UserScreens_passcode)))
+	// logInt("SquareImages...", rdb.HSet(ctx, "SquareImages", "qr", string(JKVDB_hashes_SquareImages_qr)))
 }
