@@ -109,17 +109,15 @@ func (c *Client) Keys(ctx context.Context, pattern string) *jkv.StringSliceCmd {
 // Return true if scalar key file exists, false otherwise
 func (c *Client) Exists(ctx context.Context, keys ...string) *jkv.IntCmd {
 	if c.IsOpen {
-		// todo: add a loop here
-		if _, err := os.Stat(c.ScalarDir() + keys[0]); err != nil {
-			if os.IsNotExist(err) {
-				return jkv.NewIntCmd(int64(0), nil)
+		n := int64(0)
+		for _, key := range keys {
+			if _, err := os.Stat(c.ScalarDir() + key); err == nil {
+				n++
 			}
-			return jkv.NewIntCmd(0, err)
 		}
-		// return jkv.NewIntCmd(int64(len(keys)), nil)
-		return jkv.NewIntCmd(1, nil)
+		return jkv.NewIntCmd(n, nil)
 	}
-	return jkv.NewIntCmd(0, nil)
+	return jkv.NewIntCmd(0, notOpen())
 }
 
 // Return data in hashed key data, error is file is missing or inaccessible
