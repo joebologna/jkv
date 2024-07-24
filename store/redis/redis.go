@@ -27,6 +27,10 @@ const DEFAULT_DB = "localhost:6379"
 
 func notOpen() error { return errors.New("DB is not open") }
 
+func (c *Client) GetDBDir() string {
+	return c.DBDir
+}
+
 func NewClient(opts *Options) (db *Client) {
 	return &Client{DBDir: opts.Addr, IsOpen: false, RedisClient: real_redis.NewClient(&real_redis.Options{Addr: opts.Addr, Password: opts.Password, DB: opts.DB})}
 }

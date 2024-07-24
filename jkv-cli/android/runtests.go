@@ -24,7 +24,7 @@ func runTestA(ctx context.Context, db jkv.Client) []string {
 	results := []string{"A: HSET/KEYS/HDEL"}
 	results = append(results, func() []string {
 		results := []string{
-			fmt.Sprintf("  db.Open returns %#v,", db.Open()),
+			fmt.Sprintf("  db.Open returns %#v, DBDir: %s", db.Open(), db.GetDBDir()),
 			fmt.Sprintf("  flushdb OK? %t", db.FlushDB(ctx).Val() == "OK"),
 			fmt.Sprintf("  (re)db.Open returns %#v", db.Open()),
 			fmt.Sprintf("  hset hash key1 one == 1? %t", db.HSet(ctx, "hash", "key1", "one").Val() == 1),

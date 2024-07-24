@@ -22,12 +22,13 @@ func main() {
 	}
 	// fmt.Println("cmd is", cmd)
 
-	var redis_cmd, fs_cmd, version, opt_x, prompt bool
+	var redis_cmd, fs_cmd, version, opt_x, prompt, info bool
 	var redis_host, db_dir string
 	flag.BoolVar(&redis_cmd, "r", cmd == "redis-cli", "Run JKV tests using Redis")
 	flag.BoolVar(&fs_cmd, "f", cmd == "jkv-cli", "Run JKV tests using FS")
 	flag.BoolVar(&version, "v", false, "Print version")
 	flag.BoolVar(&opt_x, "x", false, "Get value from stdin")
+	flag.BoolVar(&info, "i", false, "Get DBDir, etc.")
 	flag.StringVar(&redis_host, "h", redis.DEFAULT_DB, "Redis server host and port")
 	flag.StringVar(&db_dir, "d", fs.DEFAULT_DB, "Location of FS DB")
 	flag.Parse()
@@ -50,6 +51,11 @@ func main() {
 		db = fs.NewClient(&fs.Options{Addr: db_loc})
 	}
 	db.Open()
+
+	if info {
+		fmt.Println(db.GetDBDir())
+		os.Exit(0)
+	}
 
 	if prompt {
 		scanner := bufio.NewScanner(os.Stdin)

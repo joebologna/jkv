@@ -32,6 +32,10 @@ func (c *Client) ScalarDir() string { return c.DBDir + "/scalars/" }
 func (c *Client) HashDir() string   { return c.DBDir + "/hashes/" }
 func notOpen() error                { return errors.New("DB is not open") }
 
+func (c *Client) GetDBDir() string {
+	return c.DBDir
+}
+
 func NewClient(opts *Options) (db *Client) {
 	return &Client{DBDir: opts.Addr, IsOpen: false}
 }

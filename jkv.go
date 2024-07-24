@@ -69,6 +69,7 @@ func (s *StatusCmd) Err() error         { return s.err }
 type Client interface {
 	Open() error
 	Close()
+	GetDBDir() string
 	FlushDB(ctx context.Context) *StatusCmd
 	Get(ctx context.Context, key string) *StringCmd
 	Set(ctx context.Context, key, value string, expiration time.Duration) *StatusCmd
