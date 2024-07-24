@@ -4,29 +4,29 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/panduit-joeb/jkv/store/apk"
+	"github.com/panduit-joeb/jkv"
 )
 
-func runTests(ctx context.Context, db *apk.Client, opts apk.Options) []string {
+func runTests(ctx context.Context, db jkv.Client) []string {
 	data := []string{}
-	data = append(data, runTestA(ctx, db, opts)...)
-	data = append(data, runTestB(ctx, db, opts)...)
-	data = append(data, runTestC(ctx, db, opts)...)
-	data = append(data, runTestD(ctx, db, opts)...)
-	data = append(data, runTestE(ctx, db, opts)...)
-	data = append(data, runTestG(ctx, db, opts)...)
-	data = append(data, runTestH(ctx, db, opts)...)
-	data = append(data, runTestK(ctx, db, opts)...)
+	data = append(data, runTestA(ctx, db)...)
+	data = append(data, runTestB(ctx, db)...)
+	data = append(data, runTestC(ctx, db)...)
+	data = append(data, runTestD(ctx, db)...)
+	data = append(data, runTestE(ctx, db)...)
+	data = append(data, runTestG(ctx, db)...)
+	data = append(data, runTestH(ctx, db)...)
+	data = append(data, runTestK(ctx, db)...)
 	return data
 }
 
-func runTestA(ctx context.Context, db *apk.Client, opts apk.Options) []string {
+func runTestA(ctx context.Context, db jkv.Client) []string {
 	results := []string{"A: HSET/KEYS/HDEL"}
 	results = append(results, func() []string {
 		results := []string{
-			fmt.Sprintf("  db.Open returns %#v, IsOpen: %t", db.Open(), db.IsOpen),
+			fmt.Sprintf("  db.Open returns %#v,", db.Open()),
 			fmt.Sprintf("  flushdb OK? %t", db.FlushDB(ctx).Val() == "OK"),
-			fmt.Sprintf("  (re)db.Open returns %#v, IsOpen: %t", db.Open(), db.IsOpen),
+			fmt.Sprintf("  (re)db.Open returns %#v", db.Open()),
 			fmt.Sprintf("  hset hash key1 one == 1? %t", db.HSet(ctx, "hash", "key1", "one").Val() == 1),
 			fmt.Sprintf("  hset hash key1 one == 0? %t", db.HSet(ctx, "hash", "key1", "one").Val() == 0),
 			fmt.Sprintf("  set scalar one == OK? %t", db.Set(ctx, "scalar", "one", 0).Val() == "OK"),
@@ -38,13 +38,13 @@ func runTestA(ctx context.Context, db *apk.Client, opts apk.Options) []string {
 	return results
 }
 
-func runTestB(ctx context.Context, db *apk.Client, opts apk.Options) []string {
+func runTestB(ctx context.Context, db jkv.Client) []string {
 	results := []string{"B: HSET/KEYS"}
 	results = append(results, func() []string {
 		results := []string{
-			fmt.Sprintf("  db.Open returns %#v, IsOpen: %t", db.Open(), db.IsOpen),
+			fmt.Sprintf("  db.Open returns %#v,", db.Open()),
 			fmt.Sprintf("  flushdb OK? %t", db.FlushDB(ctx).Val() == "OK"),
-			fmt.Sprintf("  (re)db.Open returns %#v, IsOpen: %t", db.Open(), db.IsOpen),
+			fmt.Sprintf("  (re)db.Open returns %#v", db.Open()),
 			fmt.Sprintf("  hset hash key1 one == 1? %t", db.HSet(ctx, "hash", "key1", "one").Val() == 1),
 			fmt.Sprintf("  hset hash key1 one == 0? %t", db.HSet(ctx, "hash", "key1", "one").Val() == 0),
 			fmt.Sprintf("  set scalar one == OK? %t", db.Set(ctx, "scalar", "one", 0).Val() == "OK"),
@@ -58,13 +58,13 @@ func runTestB(ctx context.Context, db *apk.Client, opts apk.Options) []string {
 	return results
 }
 
-func runTestC(ctx context.Context, db *apk.Client, opts apk.Options) []string {
+func runTestC(ctx context.Context, db jkv.Client) []string {
 	results := []string{"C: SET/GET"}
 	results = append(results, func() []string {
 		results := []string{
-			fmt.Sprintf("  db.Open returns %#v, IsOpen: %t", db.Open(), db.IsOpen),
+			fmt.Sprintf("  db.Open returns %#v,", db.Open()),
 			fmt.Sprintf("  flushdb OK? %t", db.FlushDB(ctx).Val() == "OK"),
-			fmt.Sprintf("  (re)db.Open returns %#v, IsOpen: %t", db.Open(), db.IsOpen),
+			fmt.Sprintf("  (re)db.Open returns %#v", db.Open()),
 			fmt.Sprintf("  set a b == 1? %t", db.Set(ctx, "a", "b", 0).Val() == "OK"),
 			fmt.Sprintf("  get a == b? %t", db.Get(ctx, "a").Val() == "b"),
 		}
@@ -73,13 +73,13 @@ func runTestC(ctx context.Context, db *apk.Client, opts apk.Options) []string {
 	return results
 }
 
-func runTestD(ctx context.Context, db *apk.Client, opts apk.Options) []string {
+func runTestD(ctx context.Context, db jkv.Client) []string {
 	results := []string{"D: SET/DEL"}
 	results = append(results, func() []string {
 		results := []string{
-			fmt.Sprintf("  db.Open returns %#v, IsOpen: %t", db.Open(), db.IsOpen),
+			fmt.Sprintf("  db.Open returns %#v,", db.Open()),
 			fmt.Sprintf("  flushdb OK? %t", db.FlushDB(ctx).Val() == "OK"),
-			fmt.Sprintf("  (re)db.Open returns %#v, IsOpen: %t", db.Open(), db.IsOpen),
+			fmt.Sprintf("  (re)db.Open returns %#v", db.Open()),
 			fmt.Sprintf("  set a b == 1? %t", db.Set(ctx, "a", "b", 0).Val() == "OK"),
 			fmt.Sprintf("  del a == 1? %t", db.Del(ctx, "a").Val() == 1),
 			fmt.Sprintf("  get a == ''? %t", db.Get(ctx, "a").Val() == ""),
@@ -93,13 +93,13 @@ func runTestD(ctx context.Context, db *apk.Client, opts apk.Options) []string {
 	return results
 }
 
-func runTestE(ctx context.Context, db *apk.Client, opts apk.Options) []string {
+func runTestE(ctx context.Context, db jkv.Client) []string {
 	results := []string{"E: EXISTS"}
 	results = append(results, func() []string {
 		results := []string{
-			fmt.Sprintf("  db.Open returns %#v, IsOpen: %t", db.Open(), db.IsOpen),
+			fmt.Sprintf("  db.Open returns %#v,", db.Open()),
 			fmt.Sprintf("  flushdb OK? %t", db.FlushDB(ctx).Val() == "OK"),
-			fmt.Sprintf("  (re)db.Open returns %#v, IsOpen: %t", db.Open(), db.IsOpen),
+			fmt.Sprintf("  (re)db.Open returns %#v", db.Open()),
 			fmt.Sprintf("  set a b == 1? %t", db.Set(ctx, "a", "b", 0).Val() == "OK"),
 			fmt.Sprintf("  set b c == 1? %t", db.Set(ctx, "b", "c", 0).Val() == "OK"),
 			fmt.Sprintf("  exists a == 1? %t", db.Exists(ctx, "a").Val() == 1),
@@ -111,13 +111,13 @@ func runTestE(ctx context.Context, db *apk.Client, opts apk.Options) []string {
 	return results
 }
 
-func runTestG(ctx context.Context, db *apk.Client, opts apk.Options) []string {
+func runTestG(ctx context.Context, db jkv.Client) []string {
 	results := []string{"G: HEXISTS"}
 	results = append(results, func() []string {
 		results := []string{
-			fmt.Sprintf("  db.Open returns %#v, IsOpen: %t", db.Open(), db.IsOpen),
+			fmt.Sprintf("  db.Open returns %#v,", db.Open()),
 			fmt.Sprintf("  flushdb OK? %t", db.FlushDB(ctx).Val() == "OK"),
-			fmt.Sprintf("  (re)db.Open returns %#v, IsOpen: %t", db.Open(), db.IsOpen),
+			fmt.Sprintf("  (re)db.Open returns %#v", db.Open()),
 			fmt.Sprintf("  hset hash key1 one key2 two key3 three == 3? %t", db.HSet(ctx, "hash", "key1", "one", "key2", "two", "key3", "three").Val() == 3),
 			fmt.Sprintf("  hexists hash key1 == true? %t", db.HExists(ctx, "hash", "key1").Val()),
 			fmt.Sprintf("  hexists hash key2 == true? %t", db.HExists(ctx, "hash", "key2").Val()),
@@ -128,13 +128,13 @@ func runTestG(ctx context.Context, db *apk.Client, opts apk.Options) []string {
 	return results
 }
 
-func runTestH(ctx context.Context, db *apk.Client, opts apk.Options) []string {
+func runTestH(ctx context.Context, db jkv.Client) []string {
 	results := []string{"H: HKEYS"}
 	results = append(results, func() []string {
 		results := []string{
-			fmt.Sprintf("  db.Open returns %#v, IsOpen: %t", db.Open(), db.IsOpen),
+			fmt.Sprintf("  db.Open returns %#v,", db.Open()),
 			fmt.Sprintf("  flushdb OK? %t", db.FlushDB(ctx).Val() == "OK"),
-			fmt.Sprintf("  (re)db.Open returns %#v, IsOpen: %t", db.Open(), db.IsOpen),
+			fmt.Sprintf("  (re)db.Open returns %#v", db.Open()),
 			fmt.Sprintf("  hset hash key1 one key2 two key3 three == 3? %t", db.HSet(ctx, "hash", "key1", "one", "key2", "two", "key3", "three").Val() == 3),
 			fmt.Sprintf("  len(hkeys hash) == 3? %t", len(db.HKeys(ctx, "hash").Val()) == 3),
 		}
@@ -143,7 +143,7 @@ func runTestH(ctx context.Context, db *apk.Client, opts apk.Options) []string {
 	return results
 }
 
-func runTestK(ctx context.Context, db *apk.Client, opts apk.Options) []string {
+func runTestK(ctx context.Context, db jkv.Client) []string {
 	results := []string{"K: PING"}
 	results = append(results, func() []string {
 		results := []string{

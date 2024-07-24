@@ -1,3 +1,3 @@
 package jkv
 
-const VERSION = "v0.1.12"
+const VERSION = "v0.1.13"

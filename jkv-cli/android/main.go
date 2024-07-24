@@ -9,7 +9,7 @@ import (
 	_ "embed"
 
 	"github.com/panduit-joeb/jkv"
-	"github.com/panduit-joeb/jkv/store/apk"
+	"github.com/panduit-joeb/jkv/store/fs"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -94,7 +94,7 @@ func main() {
 	// 	label.SetText("Booted.")
 	// 	label.Refresh()
 	// 	c.Refresh(c.Content())
-	// 	f := apk.NewClient(&apk.Options{Addr: apk.GetDBDir()})
+	// 	f := fs.NewClient(&fs.Options{Addr: fs.GetDBDir()})
 	// 	if err := f.Open(); err == nil {
 	// 		fmt.Printf("db check. j.IsOpen = %t\n", f.IsOpen)
 	// 		c.SetContent(genShell(f))
@@ -105,8 +105,8 @@ func main() {
 	// }()
 	go func() {
 		ctx := context.Background()
-		opts := apk.Options{Addr: apk.GetDBDir()}
-		rdb := apk.NewClient(&opts)
+		opts := fs.Options{Addr: fs.GetDBDir()}
+		rdb := fs.NewClient(&opts)
 		data := binding.BindStringList(
 			&[]string{},
 		)
@@ -120,7 +120,7 @@ func main() {
 			})
 
 		add := widget.NewButton("Run Tests", func() {
-			for _, val := range runTests(ctx, rdb, opts) {
+			for _, val := range runTests(ctx, rdb) {
 				data.Append(val)
 			}
 		})

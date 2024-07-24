@@ -13,7 +13,6 @@ import (
 
 	"github.com/panduit-joeb/jkv"
 	"github.com/panduit-joeb/jkv/pkg"
-	"github.com/panduit-joeb/jkv/store/apk"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -22,7 +21,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-func genShell(rdb *apk.Client) fyne.CanvasObject {
+func genShell(rdb jkv.Client) fyne.CanvasObject {
 	winWidth := float32(1024)
 	objSize := fyne.NewSquareSize(winWidth / 4)
 	bg := canvas.NewRectangle(color.White)

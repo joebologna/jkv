@@ -16,18 +16,8 @@ This script requires:
   - [x] rdb.Del()
 - upload-backgrounds
   - redis-cli -x HSET hkey key <file
-- [ ] redis-cli HSET RunModes Production '{"Debug":true}' Dev '{"Debug":true}' :current Dev
+- [x] redis-cli HSET RunModes Production '{"Debug":true}' Dev '{"Debug":true}' :current Dev
   - returns `(integer) 3`
 - backupdb
   - rdbrip -s rdb.sys.zip
   - rdbrip -c rdb-config.zip
-
-# //todo
-
-Change the JKV_OP to match the Redis operations supported, including return codes such as Err().
-
-Convert asset-mgmt/screens/main.go first
-  - [ ] dbutil
-    - [ ] use jkv/store/redis
-    - [ ] Rework JVK_OP to be compatible with operations required by dbutil and screens/main.go
-    - [ ] 
